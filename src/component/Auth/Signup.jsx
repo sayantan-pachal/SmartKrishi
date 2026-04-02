@@ -59,7 +59,7 @@ function Signup() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center px-4 bg-[linear-gradient(180deg,#f0fdf4,#dcfce7)] dark:bg-[linear-gradient(0deg,#111827,#000000)]">
+        <div className="min-h-screen flex items-center justify-center px-4 mt-10 bg-[linear-gradient(180deg,#f0fdf4,#dcfce7)] dark:bg-[linear-gradient(0deg,#111827,#000000)]">
             <div className="w-full max-w-md p-8 rounded-xl bg-white/70 dark:bg-gray-900/70 backdrop-blur shadow-lg border border-white/20 dark:border-gray-800">
                 <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-white">
                     Join SmartKrishi 🌾

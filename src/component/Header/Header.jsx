@@ -1,8 +1,11 @@
-import { useState } from "react";
-import ThemeToggle from "./ThemeToggle"
+/* eslint-disable no-unused-vars */
+import { useState, useEffect, useRef } from "react";
+import ThemeToggle from "./ThemeToggle";
 import { Menu, X, UserRound } from 'lucide-react';
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import Logo from "./Logo";
+import { account } from "../../appwrite/config"; // Ensure the path is correct
+
 const navLinks = [
     { label: "Dashboard", to: "/dashboard" },
     { label: "Fields", to: "/fields" },
@@ -13,19 +16,52 @@ const navLinks = [
 export default function Header() {
     const [menuOpen, setMenuOpen] = useState(false);
     const [userOpen, setUserOpen] = useState(false);
+    const dropdownRef = useRef(null); // ✅ Create a reference for the dropdown
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            // ✅ Close if clicking outside the dropdown container
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setUserOpen(false);
+            }
+        };
+
+        // Add listener when dropdown is open
+        if (userOpen) {
+            document.addEventListener("mousedown", handleClickOutside);
+        }
+
+        return () => {
+            // Cleanup listener
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [userOpen]);
+
+    const [user, setUser] = useState(null); // ✅ Store Appwrite user
     const navigate = useNavigate();
 
-    // 1. Fetch user session and database from localStorage
-    const session = JSON.parse(localStorage.getItem("smartkrishi_session"));
-    const users = JSON.parse(localStorage.getItem("smartkrishi_users")) || [];
+    // ✅ Fetch user session from Appwrite on mount
+    useEffect(() => {
+        const checkUser = async () => {
+            try {
+                const sessionUser = await account.get();
+                setUser(sessionUser);
+            } catch (error) {
+                setUser(null); // No active session
+            }
+        };
+        checkUser();
+    }, []);
 
-    // 2. Find the full details of the current logged-in user
-    const currentUser = users.find((u) => u.email === session?.email);
-
-    const handleLogout = () => {
-        // 3. Remove the CORRECT key on logout
-        localStorage.removeItem("smartkrishi_session");
-        navigate("/login", { replace: true });
+    const handleLogout = async () => {
+        try {
+            await account.deleteSession("current");
+            setUser(null);
+            setUserOpen(false);
+            navigate("/login", { replace: true });
+        } catch (error) {
+            console.error("Logout failed:", error);
+        }
     };
 
     return (
@@ -35,6 +71,7 @@ export default function Header() {
                 <div className="flex items-center gap-2">
                     <Logo />
                 </div>
+
                 {/* Desktop Menu */}
                 <ul className="hidden md:flex gap-8">
                     {navLinks.map((link) => (
@@ -54,22 +91,32 @@ export default function Header() {
                     ))}
                 </ul>
                 {/* Right Section */}
-                <div className="flex items-center gap-4 relative">
-                    {/* Dark Mode Toggle */}
+                <div className="flex items-center gap-4 relative" ref={dropdownRef}>
                     <ThemeToggle />
                     {/* User Avatar */}
                     <button onClick={() => setUserOpen(!userOpen)} className="focus:outline-none hover:opacity-80 transition">
-                        <UserRound className="w-9 h-9 p-1.5 rounded-full border border-gray-800 dark:border-gray-600 text-gray-600 dark:text-gray-400" />
+                        {user ? (
+                            <div className="w-10 h-10 rounded-full border-2 border-green-500 p-1">
+                                <img
+                                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'Farmer')}&background=dcfce7&color=166534&bold=true&font-size=0.6&length=2`}
+                                    alt="Avatar"
+                                    className="w-full h-full rounded-full object-cover"
+                                />
+                            </div>
+                        ) : (
+                            <UserRound className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+                        )}
                     </button>
                     {/* User Dropdown */}
                     {userOpen && (
                         <div className="absolute right-0 top-12 w-56 bg-[#f0fdf4] dark:bg-gray-800 border dark:border-gray-700 rounded-tr-2xl rounded-bl-2xl shadow-xl overflow-hidden z-50">
                             <div className="px-4 py-3 border-b dark:border-gray-700 bg-green-50/30 dark:bg-gray-800/50">
-                                <p className="text-sm font-bold text-gray-900 dark:text-white truncate" title={currentUser?.name}>
-                                    {currentUser?.name || "Farmer"}
+                                {/* ✅ Updated to use Appwrite 'user' state */}
+                                <p className="text-sm font-bold text-gray-900 dark:text-white truncate" title={user?.name}>
+                                    {user?.name || "Farmer"}
                                 </p>
-                                <p className="text-xs text-gray-500 truncate" title={currentUser?.email}>
-                                    {currentUser?.email || ""}
+                                <p className="text-xs text-gray-500 truncate" title={user?.email}>
+                                    {user?.email || "Guest"}
                                 </p>
                             </div>
                             <ul className="text-sm dark:text-gray-300">
@@ -96,6 +143,7 @@ export default function Header() {
                             </ul>
                         </div>
                     )}
+
                     {/* Mobile Menu Button */}
                     <button
                         className="md:hidden"
@@ -105,25 +153,28 @@ export default function Header() {
                     </button>
                 </div>
             </div>
+
             {/* Mobile Menu */}
             {menuOpen && (
                 <div className="md:hidden bg-white dark:bg-gray-900 border-t dark:border-gray-700">
-                    {navLinks.map((link) => (
-                        <li key={link.to}>
-                            <NavLink
-                                to={link.to}
-                                onClick={() => setMenuOpen(false)}
-                                className={({ isActive }) =>
-                                    `block py-2 px-4 rounded-lg font-semibold transition-colors ${isActive
-                                        ? "bg-orange-50 text-green-600 dark:bg-orange-900/20 dark:text-green-400"
-                                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
-                                    }`
-                                }
-                            >
-                                {link.label}
-                            </NavLink>
-                        </li>
-                    ))}
+                    <ul className="py-2">
+                        {navLinks.map((link) => (
+                            <li key={link.to}>
+                                <NavLink
+                                    to={link.to}
+                                    onClick={() => setMenuOpen(false)}
+                                    className={({ isActive }) =>
+                                        `block py-2 px-4 rounded-lg font-semibold transition-colors ${isActive
+                                            ? "bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400"
+                                            : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+                                        }`
+                                    }
+                                >
+                                    {link.label}
+                                </NavLink>
+                            </li>
+                        ))}
+                    </ul>
                 </div>
             )}
         </nav>

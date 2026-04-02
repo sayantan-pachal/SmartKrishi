@@ -1,19 +1,28 @@
-/* eslint-disable react-hooks/static-components */
-import React from 'react';
-import { User, Mail, MapPin, Calendar, Phone, ShieldCheck } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { User, Mail, MapPin, Calendar, Phone, ShieldCheck, Loader2 } from 'lucide-react';
+import { account } from "../../appwrite/config"; // Ensure path is correct
 
 function Profile() {
-  // 1. Fetch user session and database from localStorage
-  const session = JSON.parse(localStorage.getItem("smartkrishi_session"));
-  const users = JSON.parse(localStorage.getItem("smartkrishi_users")) || [];
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // 2. Find the full details of the current logged-in user
-  const currentUser = users.find((u) => u.email === session?.email);
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const data = await account.get();
+        setUser(data);
+      } catch (error) {
+        console.error("Profile Fetch Error:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUserData();
+  }, []);
 
-  // Helper to format labels
   // eslint-disable-next-line no-unused-vars
   const ProfileItem = ({ icon: Icon, label, value }) => (
-    <div className="flex items-center gap-4 p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700">
+    <div className="flex items-center gap-4 p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 transition-colors">
       <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400">
         <Icon size={20} />
       </div>
@@ -28,6 +37,14 @@ function Profile() {
     </div>
   );
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#f0fdf4] dark:bg-black">
+        <Loader2 className="w-10 h-10 animate-spin text-green-600" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#f0fdf4] dark:bg-black pt-28 px-4 pb-12">
       <div className="max-w-3xl mx-auto">
@@ -40,7 +57,7 @@ function Profile() {
             <div className="relative">
               <div className="w-24 h-24 rounded-full border-4 border-green-500 p-1">
                 <img 
-                  src="https://i.pravatar.cc/150" 
+                  src={`https://ui-avatars.com/api/?name=${user?.name || 'Farmer'}&background=dcfce7&color=166534`} 
                   alt="Avatar" 
                   className="w-full h-full rounded-full object-cover"
                 />
@@ -52,7 +69,7 @@ function Profile() {
 
             <div className="text-center md:text-left">
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                {currentUser?.name || "Farmer"}
+                {user?.name || "Farmer"}
               </h1>
               <p className="text-green-600 dark:text-green-400 font-medium">
                 Verified SmartKrishi Farmer 🌾
@@ -66,17 +83,17 @@ function Profile() {
           <ProfileItem 
             icon={User} 
             label="Full Name" 
-            value={currentUser?.name} 
+            value={user?.name} 
           />
           <ProfileItem 
             icon={Mail} 
             label="Email Address" 
-            value={currentUser?.email} 
+            value={user?.email} 
           />
           <ProfileItem 
             icon={Phone} 
             label="Phone Number" 
-            value={currentUser?.phone || "+91 XXXXX-XXXXX"} 
+            value={user?.phone} 
           />
           <ProfileItem 
             icon={MapPin} 
@@ -86,7 +103,7 @@ function Profile() {
           <ProfileItem 
             icon={Calendar} 
             label="Member Since" 
-            value={new Date(session?.loginTime).toLocaleDateString() || "2024"} 
+            value={user?.$createdAt ? new Date(user.$createdAt).toLocaleDateString() : "N/A"} 
           />
           <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg cursor-pointer hover:opacity-90 transition">
             <div className="p-2 rounded-lg bg-white/20">
@@ -94,7 +111,7 @@ function Profile() {
             </div>
             <div>
               <p className="text-xs text-green-100 uppercase font-bold">Account Status</p>
-              <p className="font-bold">Active & Secure</p>
+              <p className="font-bold">{user?.status ? "Active & Secure" : "Verified"}</p>
             </div>
           </div>
         </div>

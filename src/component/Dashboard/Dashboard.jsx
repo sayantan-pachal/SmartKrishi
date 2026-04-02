@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Leaf,
   CloudRain,
@@ -7,37 +7,38 @@ import {
   LogOut,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { account } from "../../appwrite/config";
 
 function Dashboard() {
   const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // 1. Get the ACTIVE session using the CORRECT key
-  const session = JSON.parse(localStorage.getItem("smartkrishi_session")); 
-  
-  // 2. Get the DATABASE of all users to find the name
-  const users = JSON.parse(localStorage.getItem("smartkrishi_users")) || [];
-
-  // 🔒 Protect dashboard: Redirect if no session or not logged in
+  // 🔐 Fetch current user session from Appwrite
   useEffect(() => {
-    if (!session || !session.isLoggedIn) {
-      navigate("/login", { replace: true });
-    }
-  }, [navigate, session]);
+    const fetchUser = async () => {
+      try {
+        // Get the current logged-in user from Appwrite
+        const currentUser = await account.get();
+        setUser(currentUser);
+      } catch (error) {
+        console.error("Not logged in:", error);
+        // Redirect to login if no session
+        navigate("/login", { replace: true });
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // Find the specific user object from the database to display their name
-  const currentUser = users.find(
-    (u) => u.email === session?.email
-  );
+    fetchUser();
+  }, [navigate]);
 
-
+  // Format name with proper capitalization
   const formatName = (name = "") =>
     name
       .toLowerCase()
       .split(" ")
-      .map(
-        (word) =>
-          word.charAt(0).toUpperCase() + word.slice(1)
-      )
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(" ");
 
   const cards = [
@@ -71,31 +72,29 @@ function Dashboard() {
     },
   ];
 
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#f0fdf4] dark:bg-black flex items-center justify-center">
+        <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#f0fdf4] dark:bg-black pt-24 px-4 pb-20">
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-6">
         <div>
           <h1 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white">
             Welcome to SmartKrishi
-            {currentUser?.name
-              ? `, ${formatName(currentUser.name)}`
-              : ""} 🌾
+            {user?.name ? `, ${formatName(user.name)}` : ""} 🌾
           </h1>
           <p className="mt-3 text-gray-600 dark:text-gray-400">
             Logged in as{" "}
             <span className="font-medium">
-              {session?.email}
+              {user?.email}
             </span>
           </p>
-        </div>
-
-        <div className="flex flex-wrap gap-3">
-          {/* <button
-            onClick={() => navigate("/reset-password")}
-            className="px-5 py-2 rounded-xl text-white bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 transition"
-          >
-            Reset Password
-          </button> */}
         </div>
       </div>
 

@@ -1,10 +1,29 @@
+import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
+import { account } from "../src/appwrite/config";
 
 function ProtectedRoute({ children }) {
-    // ✅ FIXED: Changed 'smartkrishi_users' to 'smartkrishi_session'
-    const session = JSON.parse(localStorage.getItem("smartkrishi_session"));
+    const [loading, setLoading] = useState(true);
+    const [authorized, setAuthorized] = useState(false);
 
-    if (!session || !session.isLoggedIn) {
+    useEffect(() => {
+        const checkSession = async () => {
+            try {
+                await account.get(); // checks current session
+                setAuthorized(true);
+            } catch {
+                setAuthorized(false);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        checkSession();
+    }, []);
+
+    if (loading) return null; // or loader
+
+    if (!authorized) {
         return <Navigate to="/login" replace />;
     }
 

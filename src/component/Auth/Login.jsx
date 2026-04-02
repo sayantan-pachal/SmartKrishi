@@ -21,7 +21,7 @@ function Login() {
       await account.createEmailPasswordSession(email, password);
       
       // Redirect to dashboard/home on success
-      navigate("/", { replace: true });
+      navigate("/dashboard", { replace: true });
     } catch (error) {
       console.error("Login Error:", error);
       alert(error.message || "Invalid email or password. Please try again.");
@@ -35,7 +35,7 @@ function Login() {
     const checkSession = async () => {
       try {
         await account.get();
-        navigate("/", { replace: true });
+        navigate("/dashboard", { replace: true });
       } catch {
         // No active session, stay on login page
       }
