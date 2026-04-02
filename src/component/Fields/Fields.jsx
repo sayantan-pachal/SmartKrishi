@@ -11,12 +11,15 @@ import {
     X,
     Calendar,
     Activity,
-    Edit
+    Edit,
+    AlertCircle,
+    Loader2,
+    Leaf
 } from "lucide-react";
-import { databases } from "../../appwrite/config";
+import { databases, account, DATABASE_ID, FIELDS_COLLECTION_ID } from "../../appwrite/config";
+import { Query } from "appwrite";
 
-const DATABASE_ID = "69cd3978001f602e83b7";
-const COLLECTION_ID = "fields";
+const COLLECTION_ID = FIELDS_COLLECTION_ID;
 
 // Memoized Detail Card Component
 const DetailCard = React.memo(({ icon: Icon, label, value, color, bg }) => (
@@ -55,7 +58,7 @@ const FieldCard = React.memo(({ field, onViewDetails, onEdit, onDelete }) => (
                     <Droplets size={16} />
                     <span className="text-xs font-bold uppercase">Moisture</span>
                 </div>
-                <p className="text-lg font-bold text-gray-800 dark:text-gray-200">{field.moisture}</p>
+                <p className="text-lg font-bold text-gray-800 dark:text-gray-200">{field.moisture || 'N/A'}</p>
             </div>
 
             <div className="bg-purple-50 dark:bg-purple-900/10 p-3 rounded-2xl">
@@ -63,7 +66,7 @@ const FieldCard = React.memo(({ field, onViewDetails, onEdit, onDelete }) => (
                     <FlaskConical size={16} />
                     <span className="text-xs font-bold uppercase">Soil PH</span>
                 </div>
-                <p className="text-lg font-bold text-gray-800 dark:text-gray-200">{field.ph}</p>
+                <p className="text-lg font-bold text-gray-800 dark:text-gray-200">{field.ph || 'N/A'}</p>
             </div>
         </div>
 
@@ -94,7 +97,7 @@ const FieldCard = React.memo(({ field, onViewDetails, onEdit, onDelete }) => (
 
 FieldCard.displayName = "FieldCard";
 
-// Modal Component
+// Modal Component - Show all details including NPK
 const FieldModal = React.memo(({ field, isOpen, onClose }) => {
     const modalRef = useRef(null);
 
@@ -135,48 +138,94 @@ const FieldModal = React.memo(({ field, isOpen, onClose }) => {
                 {/* Modal Body - Scrollable */}
                 <div className="overflow-y-auto flex-1">
                     <div className="p-8 space-y-6">
-                        <div className="grid grid-cols-2 gap-4 mb-8">
-                            <DetailCard
-                                icon={Droplets}
-                                label="Moisture"
-                                value={field.moisture}
-                                color="text-blue-500"
-                                bg="bg-blue-50"
-                            />
-                            <DetailCard
-                                icon={FlaskConical}
-                                label="Soil PH"
-                                value={field.ph}
-                                color="text-purple-500"
-                                bg="bg-purple-50"
-                            />
-                            <DetailCard
-                                icon={Activity}
-                                label="Nitrogen"
-                                value={field.nitrogen}
-                                color="text-orange-500"
-                                bg="bg-orange-50"
-                            />
-                            <DetailCard
-                                icon={Calendar}
-                                label="Last Test"
-                                value={field.lastTested}
-                                color="text-gray-500"
-                                bg="bg-gray-50"
-                            />
+                        {/* Basic Info */}
+                        <div className="space-y-3">
+                            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                                <span className="text-xs font-bold text-gray-500 uppercase">Field Size</span>
+                                <span className="text-lg font-bold text-gray-800 dark:text-gray-200">{field.size}</span>
+                            </div>
+                            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                                <span className="text-xs font-bold text-gray-500 uppercase">Current Crop</span>
+                                <span className="text-lg font-bold text-gray-800 dark:text-gray-200">{field.crop}</span>
+                            </div>
                         </div>
 
+                        {/* Soil Metrics Grid */}
+                        <div>
+                            <h3 className="text-sm font-bold text-gray-500 uppercase mb-3">Soil Metrics</h3>
+                            <div className="grid grid-cols-2 gap-4 mb-8">
+                                <DetailCard
+                                    icon={Droplets}
+                                    label="Moisture"
+                                    value={field.moisture || 'N/A'}
+                                    color="text-blue-500"
+                                    bg="bg-blue-50"
+                                />
+                                <DetailCard
+                                    icon={FlaskConical}
+                                    label="Soil PH"
+                                    value={field.ph || 'N/A'}
+                                    color="text-purple-500"
+                                    bg="bg-purple-50"
+                                />
+                            </div>
+                        </div>
+
+                        {/* NPK Analysis */}
+                        <div>
+                            <h3 className="text-sm font-bold text-gray-500 uppercase mb-3">NPK Analysis</h3>
+                            <div className="grid grid-cols-3 gap-3 mb-8">
+                                <DetailCard
+                                    icon={Leaf}
+                                    label="Nitrogen (N)"
+                                    value={field.nitrogen || 'N/A'}
+                                    color="text-green-500"
+                                    bg="bg-green-50"
+                                />
+                                <DetailCard
+                                    icon={Activity}
+                                    label="Phosphorus (P)"
+                                    value={field.phosphorus || 'N/A'}
+                                    color="text-orange-500"
+                                    bg="bg-orange-50"
+                                />
+                                <DetailCard
+                                    icon={Droplets}
+                                    label="Potassium (K)"
+                                    value={field.potassium || 'N/A'}
+                                    color="text-pink-500"
+                                    bg="bg-pink-50"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Status & Recommendations */}
                         <div className="space-y-4">
+                            <div className="p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">
+                                    Field Status
+                                </p>
+                                <p className="text-gray-700 dark:text-gray-300 font-semibold">
+                                    {field.status === "Healthy" ? "✅ Field is in good condition" : "⚠️ Requires attention"}
+                                </p>
+                            </div>
+
                             <div className="p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
                                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">
                                     Recommended Action
                                 </p>
                                 <p className="text-gray-700 dark:text-gray-300">
                                     {field.status === "Healthy"
-                                        ? "Maintain current irrigation schedule. No immediate action required."
-                                        : "Increase water supply by 20% over the next 48 hours to reach optimal moisture."}
+                                        ? "Maintain current irrigation schedule. Continue monitoring soil metrics regularly."
+                                        : "Check moisture levels and adjust irrigation accordingly. Consider nutrient supplementation if needed."}
                                 </p>
                             </div>
+                        </div>
+
+                        {/* Metadata */}
+                        <div className="text-xs text-gray-400 space-y-1">
+                            <p>Created: {new Date(field.$createdAt).toLocaleDateString()}</p>
+                            <p>Last Updated: {new Date(field.$updatedAt).toLocaleDateString()}</p>
                         </div>
 
                         <button
@@ -194,6 +243,86 @@ const FieldModal = React.memo(({ field, isOpen, onClose }) => {
 
 FieldModal.displayName = "FieldModal";
 
+// Delete Confirmation Modal
+const DeleteConfirmModal = React.memo(({ isOpen, fieldName, onConfirm, onCancel, isDeleting }) => {
+    const modalRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (modalRef.current && !modalRef.current.contains(event.target)) {
+                onCancel();
+            }
+        };
+
+        if (isOpen) {
+            document.addEventListener("mousedown", handleClickOutside);
+            return () => document.removeEventListener("mousedown", handleClickOutside);
+        }
+    }, [isOpen, onCancel]);
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <div
+                ref={modalRef}
+                className="bg-white dark:bg-gray-900 w-full max-w-sm rounded-[2.5rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200"
+            >
+                {/* Modal Body */}
+                <div className="p-8">
+                    <div className="flex items-center justify-center mb-4">
+                        <div className="p-3 bg-red-100 dark:bg-red-900/20 rounded-full">
+                            <AlertCircle className="text-red-600 dark:text-red-400" size={32} />
+                        </div>
+                    </div>
+
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white text-center mb-2">
+                        Delete Field?
+                    </h3>
+
+                    <p className="text-gray-600 dark:text-gray-400 text-center mb-2">
+                        Are you sure you want to delete <span className="font-semibold">"{fieldName}"</span>?
+                    </p>
+
+                    <p className="text-gray-500 dark:text-gray-500 text-sm text-center mb-6">
+                        This action cannot be undone.
+                    </p>
+
+                    {/* Buttons */}
+                    <div className="flex gap-3">
+                        <button
+                            onClick={onCancel}
+                            disabled={isDeleting}
+                            className="flex-1 px-4 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={onConfirm}
+                            disabled={isDeleting}
+                            className="flex-1 px-4 py-3 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                            {isDeleting ? (
+                                <>
+                                    <Loader2 className="animate-spin" size={18} />
+                                    Deleting...
+                                </>
+                            ) : (
+                                <>
+                                    <Trash2 size={18} />
+                                    Delete
+                                </>
+                            )}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+});
+
+DeleteConfirmModal.displayName = "DeleteConfirmModal";
+
 // Add/Edit Field Form Modal
 const FormFieldModal = React.memo(({ isOpen, onClose, onSubmit, initialData = null, isEditMode = false }) => {
     const modalRef = useRef(null);
@@ -203,7 +332,9 @@ const FormFieldModal = React.memo(({ isOpen, onClose, onSubmit, initialData = nu
         crop: "",
         moisture: "",
         ph: "",
-        nitrogen: "Optimal",
+        nitrogen: "",
+        phosphorus: "",
+        potassium: "",
         status: "Healthy",
     });
     const [errors, setErrors] = useState({});
@@ -214,12 +345,14 @@ const FormFieldModal = React.memo(({ isOpen, onClose, onSubmit, initialData = nu
         if (initialData) {
             setFormData({
                 name: initialData.name,
-                size: initialData.size.replace(" Acres", ""),
+                size: initialData.size ? initialData.size.replace(" Acres", "") : "",
                 crop: initialData.crop,
-                moisture: initialData.moisture.replace("%", ""),
-                ph: initialData.ph,
-                nitrogen: initialData.nitrogen,
-                status: initialData.status,
+                moisture: initialData.moisture || "",
+                ph: initialData.ph || "",
+                nitrogen: initialData.nitrogen || "",
+                phosphorus: initialData.phosphorus || "",
+                potassium: initialData.potassium || "",
+                status: initialData.status || "Healthy",
             });
         } else {
             setFormData({
@@ -228,7 +361,9 @@ const FormFieldModal = React.memo(({ isOpen, onClose, onSubmit, initialData = nu
                 crop: "",
                 moisture: "",
                 ph: "",
-                nitrogen: "Optimal",
+                nitrogen: "",
+                phosphorus: "",
+                potassium: "",
                 status: "Healthy",
             });
         }
@@ -253,8 +388,6 @@ const FormFieldModal = React.memo(({ isOpen, onClose, onSubmit, initialData = nu
         if (!formData.name.trim()) newErrors.name = "Field name is required";
         if (!formData.size.trim()) newErrors.size = "Size is required";
         if (!formData.crop.trim()) newErrors.crop = "Crop type is required";
-        if (!formData.moisture.trim()) newErrors.moisture = "Moisture level is required";
-        if (!formData.ph.trim()) newErrors.ph = "Soil PH is required";
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -280,7 +413,9 @@ const FormFieldModal = React.memo(({ isOpen, onClose, onSubmit, initialData = nu
                     crop: "",
                     moisture: "",
                     ph: "",
-                    nitrogen: "Optimal",
+                    nitrogen: "",
+                    phosphorus: "",
+                    potassium: "",
                     status: "Healthy",
                 });
                 setErrors({});
@@ -299,7 +434,7 @@ const FormFieldModal = React.memo(({ isOpen, onClose, onSubmit, initialData = nu
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
             <div
                 ref={modalRef}
-                className="bg-white dark:bg-gray-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[85vh]"
+                className="bg-white dark:bg-gray-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]"
             >
                 {/* Modal Header */}
                 <div className="relative h-32 bg-gradient-to-r from-green-500 to-emerald-600 p-6 flex-shrink-0">
@@ -331,14 +466,14 @@ const FormFieldModal = React.memo(({ isOpen, onClose, onSubmit, initialData = nu
                         {/* Field Name */}
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                Field Name
+                                Field Name <span className="text-red-500">*</span>
                             </label>
                             <input
                                 type="text"
                                 name="name"
                                 value={formData.name}
                                 onChange={handleChange}
-                                placeholder="e.g., North Paddy Square"
+                                placeholder="e.g., North Paddy Field"
                                 disabled={isSubmitting}
                                 className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 outline-none dark:text-white disabled:opacity-50"
                             />
@@ -349,7 +484,7 @@ const FormFieldModal = React.memo(({ isOpen, onClose, onSubmit, initialData = nu
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                    Size (Acres)
+                                    Size (Acres) <span className="text-red-500">*</span>
                                 </label>
                                 <input
                                     type="number"
@@ -365,7 +500,7 @@ const FormFieldModal = React.memo(({ isOpen, onClose, onSubmit, initialData = nu
                             </div>
                             <div>
                                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                    Crop Type
+                                    Crop Type <span className="text-red-500">*</span>
                                 </label>
                                 <input
                                     type="text"
@@ -380,78 +515,106 @@ const FormFieldModal = React.memo(({ isOpen, onClose, onSubmit, initialData = nu
                             </div>
                         </div>
 
-                        {/* Moisture and PH */}
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                    Moisture (%)
-                                </label>
-                                <input
-                                    type="number"
-                                    name="moisture"
-                                    value={formData.moisture}
-                                    onChange={handleChange}
-                                    placeholder="e.g., 45"
-                                    min="0"
-                                    max="100"
-                                    disabled={isSubmitting}
-                                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 outline-none dark:text-white disabled:opacity-50"
-                                />
-                                {errors.moisture && <p className="text-red-500 text-xs mt-1">{errors.moisture}</p>}
-                            </div>
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                    Soil PH
-                                </label>
-                                <input
-                                    type="number"
-                                    name="ph"
-                                    value={formData.ph}
-                                    onChange={handleChange}
-                                    placeholder="e.g., 6.5"
-                                    step="0.1"
-                                    min="0"
-                                    max="14"
-                                    disabled={isSubmitting}
-                                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 outline-none dark:text-white disabled:opacity-50"
-                                />
-                                {errors.ph && <p className="text-red-500 text-xs mt-1">{errors.ph}</p>}
+                        {/* Soil Metrics */}
+                        <div>
+                            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Soil Metrics</h3>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                        Moisture (%)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="moisture"
+                                        value={formData.moisture}
+                                        onChange={handleChange}
+                                        placeholder="e.g., 45%"
+                                        disabled={isSubmitting}
+                                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 outline-none dark:text-white disabled:opacity-50"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                        Soil PH
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="ph"
+                                        value={formData.ph}
+                                        onChange={handleChange}
+                                        placeholder="e.g., 6.5"
+                                        disabled={isSubmitting}
+                                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 outline-none dark:text-white disabled:opacity-50"
+                                    />
+                                </div>
                             </div>
                         </div>
 
-                        {/* Nitrogen Level and Status */}
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                    Nitrogen Level
-                                </label>
-                                <select
-                                    name="nitrogen"
-                                    value={formData.nitrogen}
-                                    onChange={handleChange}
-                                    disabled={isSubmitting}
-                                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 outline-none dark:text-white disabled:opacity-50"
-                                >
-                                    <option value="Low">Low</option>
-                                    <option value="Optimal">Optimal</option>
-                                    <option value="High">High</option>
-                                </select>
+                        {/* NPK Analysis */}
+                        <div>
+                            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">NPK Analysis</h3>
+                            <div className="grid grid-cols-3 gap-3">
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                        Nitrogen (mg/kg)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="nitrogen"
+                                        value={formData.nitrogen}
+                                        onChange={handleChange}
+                                        placeholder="e.g., 250"
+                                        disabled={isSubmitting}
+                                        className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 outline-none dark:text-white disabled:opacity-50 text-sm"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                        Phosphorus (mg/kg)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="phosphorus"
+                                        value={formData.phosphorus}
+                                        onChange={handleChange}
+                                        placeholder="e.g., 30"
+                                        disabled={isSubmitting}
+                                        className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 outline-none dark:text-white disabled:opacity-50 text-sm"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                        Potassium (mg/kg)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="potassium"
+                                        value={formData.potassium}
+                                        onChange={handleChange}
+                                        placeholder="e.g., 150"
+                                        disabled={isSubmitting}
+                                        className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 outline-none dark:text-white disabled:opacity-50 text-sm"
+                                    />
+                                </div>
                             </div>
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                    Status
-                                </label>
-                                <select
-                                    name="status"
-                                    value={formData.status}
-                                    onChange={handleChange}
-                                    disabled={isSubmitting}
-                                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 outline-none dark:text-white disabled:opacity-50"
-                                >
-                                    <option value="Healthy">Healthy</option>
-                                    <option value="Needs Water">Needs Water</option>
-                                </select>
-                            </div>
+                        </div>
+
+                        {/* Status */}
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                Status
+                            </label>
+                            <select
+                                name="status"
+                                value={formData.status}
+                                onChange={handleChange}
+                                disabled={isSubmitting}
+                                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 outline-none dark:text-white disabled:opacity-50"
+                            >
+                                <option value="Healthy">Healthy</option>
+                                <option value="Needs Water">Needs Water</option>
+                                <option value="Needs Nutrients">Needs Nutrients</option>
+                            </select>
                         </div>
 
                         {/* Submit and Cancel Buttons */}
@@ -467,9 +630,16 @@ const FormFieldModal = React.memo(({ isOpen, onClose, onSubmit, initialData = nu
                             <button
                                 type="submit"
                                 disabled={isSubmitting}
-                                className="flex-1 py-3 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition-colors active:scale-95 disabled:opacity-50"
+                                className="flex-1 py-3 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition-colors active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
                             >
-                                {isSubmitting ? "Processing..." : isEditMode ? "Update Field" : "Add Field"}
+                                {isSubmitting ? (
+                                    <>
+                                        <Loader2 className="animate-spin" size={18} />
+                                        Processing...
+                                    </>
+                                ) : (
+                                    isEditMode ? "Update Field" : "Add Field"
+                                )}
                             </button>
                         </div>
                     </div>
@@ -490,17 +660,45 @@ function Fields() {
     const [fields, setFields] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [userId, setUserId] = useState(null);
+    const [deleteConfirm, setDeleteConfirm] = useState(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
-    // Fetch fields from Appwrite
+    // 🔑 Get current user ID
     useEffect(() => {
+        const getAccount = async () => {
+            try {
+                const user = await account.get();
+                console.log("✅ User logged in:", user.$id);
+                setUserId(user.$id);
+            } catch (err) {
+                console.error("❌ User not logged in:", err);
+                setError("Please log in to view fields");
+            }
+        };
+        getAccount();
+    }, []);
+
+    // 📥 Fetch fields from Appwrite (user-specific)
+    useEffect(() => {
+        if (!userId) {
+            console.log("⏳ Waiting for userId...");
+            return;
+        }
+
         const fetchFields = async () => {
             try {
                 setLoading(true);
                 setError(null);
+                console.log("🔍 Fetching fields for userId:", userId);
+
                 const response = await databases.listDocuments(
                     DATABASE_ID,
-                    COLLECTION_ID
+                    COLLECTION_ID,
+                    [Query.equal("userId", userId)]
                 );
+
+                console.log("✅ Fields fetched:", response.documents.length);
                 setFields(response.documents);
             } catch (err) {
                 console.error("Error fetching fields:", err.message);
@@ -511,26 +709,52 @@ function Fields() {
         };
 
         fetchFields();
+    }, [userId]);
+
+    // 🗑️ Handle delete with confirmation
+    const handleDeleteClick = useCallback((fieldId, fieldName) => {
+        setDeleteConfirm({ fieldId, fieldName });
     }, []);
 
-    const deleteField = useCallback(async (fieldId) => {
+    const handleConfirmDelete = useCallback(async () => {
+        if (!deleteConfirm) return;
+
+        setIsDeleting(true);
         try {
+            console.log("🗑️ Deleting field:", deleteConfirm.fieldId);
+
             await databases.deleteDocument(
                 DATABASE_ID,
                 COLLECTION_ID,
-                fieldId
+                deleteConfirm.fieldId
             );
-            setFields((prevFields) => prevFields.filter((field) => field.$id !== fieldId));
+
+            console.log("✅ Field deleted:", deleteConfirm.fieldId);
+
+            setFields((prevFields) =>
+                prevFields.filter((field) => field.$id !== deleteConfirm.fieldId)
+            );
+            setDeleteConfirm(null);
+            setError(null);
         } catch (err) {
             console.error("Error deleting field:", err.message);
             setError("Failed to delete field. Please try again.");
+        } finally {
+            setIsDeleting(false);
         }
-    }, []);
+    }, [deleteConfirm]);
 
     const handleAddField = useCallback(async (formData) => {
+        if (!userId) {
+            setError("User not authenticated");
+            return;
+        }
+
         try {
             if (editingField) {
                 // Update existing field
+                console.log("✏️ Updating field:", editingField.$id);
+
                 await databases.updateDocument(
                     DATABASE_ID,
                     COLLECTION_ID,
@@ -539,12 +763,16 @@ function Fields() {
                         name: formData.name,
                         size: `${formData.size} Acres`,
                         crop: formData.crop,
-                        moisture: `${formData.moisture}%`,
+                        moisture: formData.moisture,
                         ph: formData.ph,
-                        status: formData.status,
                         nitrogen: formData.nitrogen,
+                        phosphorus: formData.phosphorus,
+                        potassium: formData.potassium,
+                        status: formData.status,
                     }
                 );
+
+                console.log("✅ Field updated");
 
                 setFields((prevFields) =>
                     prevFields.map((field) =>
@@ -554,10 +782,12 @@ function Fields() {
                                 name: formData.name,
                                 size: `${formData.size} Acres`,
                                 crop: formData.crop,
-                                moisture: `${formData.moisture}%`,
+                                moisture: formData.moisture,
                                 ph: formData.ph,
-                                status: formData.status,
                                 nitrogen: formData.nitrogen,
+                                phosphorus: formData.phosphorus,
+                                potassium: formData.potassium,
+                                status: formData.status,
                             }
                             : field
                     )
@@ -565,15 +795,19 @@ function Fields() {
                 setEditingField(null);
             } else {
                 // Add new field
+                console.log("📤 Creating new field with userId:", userId);
+
                 const newFieldData = {
                     name: formData.name,
                     size: `${formData.size} Acres`,
                     crop: formData.crop,
-                    moisture: `${formData.moisture}%`,
+                    moisture: formData.moisture,
                     ph: formData.ph,
-                    status: formData.status,
                     nitrogen: formData.nitrogen,
-                    lastTested: new Date().toISOString().split("T")[0],
+                    phosphorus: formData.phosphorus,
+                    potassium: formData.potassium,
+                    status: formData.status,
+                    userId: userId, // 🔥 Link field to user
                 };
 
                 const response = await databases.createDocument(
@@ -583,14 +817,16 @@ function Fields() {
                     newFieldData
                 );
 
+                console.log("✅ Field created:", response.$id);
+
                 setFields((prevFields) => [response, ...prevFields]);
             }
             setIsFormModalOpen(false);
         } catch (err) {
             console.error("Error saving field:", err.message);
-            setError("Failed to save field. Please try again.");
+            setError(`Failed to save field: ${err.message}`);
         }
-    }, [editingField]);
+    }, [editingField, userId]);
 
     const handleEditField = useCallback((field) => {
         setEditingField(field);
@@ -677,7 +913,7 @@ function Fields() {
                             field={field}
                             onViewDetails={setSelectedField}
                             onEdit={handleEditField}
-                            onDelete={deleteField}
+                            onDelete={(fieldId) => handleDeleteClick(fieldId, field.name)}
                         />
                     ))}
 
@@ -705,6 +941,13 @@ function Fields() {
                 onSubmit={handleAddField}
                 initialData={editingField}
                 isEditMode={!!editingField}
+            />
+            <DeleteConfirmModal
+                isOpen={!!deleteConfirm}
+                fieldName={deleteConfirm?.fieldName}
+                onConfirm={handleConfirmDelete}
+                onCancel={() => setDeleteConfirm(null)}
+                isDeleting={isDeleting}
             />
         </div>
     );

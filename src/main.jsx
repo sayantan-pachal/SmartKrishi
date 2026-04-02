@@ -13,6 +13,7 @@ import ProtectedRoute from './ProtectedRoute.jsx'
 import Profile from './component/Profile/Profile.jsx'
 import Settings from './component/Settings/Settings.jsx'
 import Fields from './component/Fields/Fields.jsx'
+import Crops from './component/Crops/Crops.jsx'
 import Edgecase from './component/Other/Edgecase.jsx'
 
 const router = createBrowserRouter(
@@ -26,6 +27,7 @@ const router = createBrowserRouter(
       {/* Protected Routes */}
       <Route path='dashboard' element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path='fields' element={<ProtectedRoute><Fields /></ProtectedRoute>} />
+      <Route path='crops' element={<ProtectedRoute><Crops /></ProtectedRoute>} />
       <Route path='profile' element={<ProtectedRoute><Profile /></ProtectedRoute>} />
       <Route path='settings' element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       {/* 404  */}
