@@ -1,15 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { Cloud, Droplets, Wind, AlertCircle, Leaf, Loader2 } from 'lucide-react';
+import { Cloud, Droplets, Wind, AlertCircle, Leaf, Loader2, Calendar, Sun, Droplet, RotateCcw } from 'lucide-react';
 
 const Advisory = () => {
     const [weather, setWeather] = useState(null);
+    const [forecast, setForecast] = useState(null);
     const [location, setLocation] = useState({ lat: null, lon: null });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [locationName, setLocationName] = useState("Your Location");
 
-    // 📍 Step 1: Get geolocation
+    // 📍 Step 1: Get geolocation (only once)
     useEffect(() => {
+        // Check if location is already cached in sessionStorage
+        const cachedLocation = sessionStorage.getItem('userLocation');
+
+        if (cachedLocation) {
+            const { lat, lon } = JSON.parse(cachedLocation);
+            console.log("📍 Using cached location:", lat, lon);
+            setLocation({ lat, lon });
+            return;
+        }
+
         if (!navigator.geolocation) {
             setError("Geolocation is not supported by your browser");
             setLoading(false);
@@ -20,6 +31,13 @@ const Advisory = () => {
             (position) => {
                 const { latitude, longitude } = position.coords;
                 console.log("✅ Location found:", latitude, longitude);
+
+                // Cache location in sessionStorage
+                sessionStorage.setItem('userLocation', JSON.stringify({
+                    lat: latitude,
+                    lon: longitude
+                }));
+
                 setLocation({
                     lat: latitude,
                     lon: longitude
@@ -33,16 +51,31 @@ const Advisory = () => {
         );
     }, []);
 
-    // 🌤️ Step 2: Fetch weather data
+    // 🌤️ Step 2: Fetch weather data and forecast
     useEffect(() => {
         if (!location.lat || !location.lon) return;
 
-        const fetchWeather = async () => {
+        // Check if weather data is already cached
+        const cachedWeather = sessionStorage.getItem('weatherData');
+        const cacheTime = sessionStorage.getItem('weatherCacheTime');
+        const now = Date.now();
+
+        // Use cache if it's less than 30 minutes old
+        if (cachedWeather && cacheTime && (now - parseInt(cacheTime) < 30 * 60 * 1000)) {
+            const { weather: w, forecast: f, locationName: ln } = JSON.parse(cachedWeather);
+            console.log("📦 Using cached weather data");
+            setWeather(w);
+            setForecast(f);
+            setLocationName(ln);
+            setLoading(false);
+            return;
+        }
+
+        const fetchWeatherAndForecast = async () => {
             try {
                 setLoading(true);
                 setError(null);
 
-                // Use the correct environment variable key
                 const API_KEY = import.meta.env.VITE_WEATHER_API_KEY;
 
                 if (!API_KEY) {
@@ -53,18 +86,52 @@ const Advisory = () => {
 
                 console.log("🔍 Fetching weather for:", location.lat, location.lon);
 
-                const response = await fetch(
+                // Fetch current weather
+                const weatherResponse = await fetch(
                     `https://api.openweathermap.org/data/2.5/weather?lat=${location.lat}&lon=${location.lon}&appid=${API_KEY}&units=metric`
                 );
 
-                if (!response.ok) {
-                    throw new Error(`Weather API error: ${response.status}`);
+                if (!weatherResponse.ok) {
+                    throw new Error(`Weather API error: ${weatherResponse.status}`);
                 }
 
-                const data = await response.json();
-                console.log("✅ Weather data received:", data);
-                setWeather(data);
-                setLocationName(data.name || "Your Location");
+                const weatherData = await weatherResponse.json();
+                console.log("✅ Weather data received:", weatherData);
+
+                // Fetch 5-day forecast
+                const forecastResponse = await fetch(
+                    `https://api.openweathermap.org/data/2.5/forecast?lat=${location.lat}&lon=${location.lon}&appid=${API_KEY}&units=metric`
+                );
+
+                if (!forecastResponse.ok) {
+                    throw new Error(`Forecast API error: ${forecastResponse.status}`);
+                }
+
+                const forecastData = await forecastResponse.json();
+                console.log("✅ Forecast data received:", forecastData);
+
+                // Process forecast to get one entry per day
+                const dailyForecasts = {};
+                forecastData.list.forEach(item => {
+                    const date = item.dt_txt.split(' ')[0]; // Get date part
+                    if (!dailyForecasts[date]) {
+                        dailyForecasts[date] = item;
+                    }
+                });
+
+                const processedForecast = Object.values(dailyForecasts).slice(0, 5);
+
+                // Cache the data
+                sessionStorage.setItem('weatherData', JSON.stringify({
+                    weather: weatherData,
+                    forecast: processedForecast,
+                    locationName: weatherData.name || "Your Location"
+                }));
+                sessionStorage.setItem('weatherCacheTime', now.toString());
+
+                setWeather(weatherData);
+                setForecast(processedForecast);
+                setLocationName(weatherData.name || "Your Location");
             } catch (err) {
                 console.error("❌ Weather fetch error:", err);
                 setError(`Failed to fetch weather: ${err.message}`);
@@ -73,11 +140,63 @@ const Advisory = () => {
             }
         };
 
-        fetchWeather();
+        fetchWeatherAndForecast();
     }, [location]);
 
+    // 🌡️ Calculate Evapotranspiration (ET) Index
+    const calculateETIndex = (temp, humidity) => {
+        // Simple ET estimation: High temp + Low humidity = High ET (more water loss)
+        // Formula: ET Index = (Temperature / 30) × (100 - Humidity) / 50
+        const etIndex = (temp / 30) * ((100 - humidity) / 50);
+        
+        if (etIndex > 1.5) {
+            return {
+                level: "Very High",
+                color: "text-red-600 dark:text-red-400",
+                bgColor: "bg-red-50 dark:bg-red-900/20",
+                advice: "Critical irrigation needed. Water loss is very high."
+            };
+        } else if (etIndex > 1) {
+            return {
+                level: "High",
+                color: "text-orange-600 dark:text-orange-400",
+                bgColor: "bg-orange-50 dark:bg-orange-900/20",
+                advice: "Increase irrigation frequency. Significant water loss expected."
+            };
+        } else if (etIndex > 0.5) {
+            return {
+                level: "Moderate",
+                color: "text-yellow-600 dark:text-yellow-400",
+                bgColor: "bg-yellow-50 dark:bg-yellow-900/20",
+                advice: "Regular irrigation recommended. Normal water loss."
+            };
+        } else {
+            return {
+                level: "Low",
+                color: "text-green-600 dark:text-green-400",
+                bgColor: "bg-green-50 dark:bg-green-900/20",
+                advice: "Minimal irrigation needed. Low water loss due to cool & humid conditions."
+            };
+        }
+    };
+
+    // Format time from Unix timestamp
+    const formatTime = (timestamp) => {
+        return new Date(timestamp * 1000).toLocaleTimeString([], { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: true 
+        });
+    };
+
+    // Calculate daylight hours
+    const calculateDaylightHours = (sunrise, sunset) => {
+        const hours = (sunset - sunrise) / 3600;
+        return hours.toFixed(1);
+    };
+
     // 💡 Step 3: Generate advisory based on weather
-    const getAdvice = (temp, humidity, windSpeed, clouds) => {
+    const getAdvice = (temp, humidity, windSpeed, clouds, rainData) => {
         const advices = [];
 
         // Temperature-based advice
@@ -128,6 +247,15 @@ const Advisory = () => {
             });
         }
 
+        // Rain detection
+        if (rainData && rainData > 0) {
+            advices.push({
+                type: "info",
+                text: "🌧️ Rain Detected: Postpone planned irrigation and fertilizer application to avoid runoff.",
+                icon: "ℹ️"
+            });
+        }
+
         // Default positive message
         if (advices.length === 0) {
             advices.push({
@@ -147,6 +275,27 @@ const Advisory = () => {
         if (temp > 15) return "from-yellow-500 to-green-500";
         if (temp > 5) return "from-green-500 to-blue-500";
         return "from-blue-500 to-cyan-500";
+    };
+
+    // Format date
+    const formatDate = (dateString) => {
+        const options = { weekday: 'short', month: 'short', day: 'numeric' };
+        return new Date(dateString + ' 00:00').toLocaleDateString('en-US', options);
+    };
+
+    // Retry function
+    const handleRetry = () => {
+        // Clear all cached data
+        sessionStorage.removeItem('userLocation');
+        sessionStorage.removeItem('weatherData');
+        sessionStorage.removeItem('weatherCacheTime');
+        
+        setError(null);
+        setLoading(true);
+        setLocation({ lat: null, lon: null });
+        
+        // Reload the page
+        window.location.reload();
     };
 
     if (loading) {
@@ -177,11 +326,18 @@ const Advisory = () => {
                 {/* Error Message */}
                 {error && (
                     <div className="mb-8 p-6 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 rounded-lg">
-                        <div className="flex items-center gap-3">
-                            <AlertCircle className="text-red-600 dark:text-red-400" size={24} />
-                            <div>
-                                <h3 className="font-bold text-red-600 dark:text-red-400">Error</h3>
-                                <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
+                        <div className="flex items-start gap-3">
+                            <AlertCircle className="text-red-600 dark:text-red-400 flex-shrink-0 mt-1" size={24} />
+                            <div className="flex-1">
+                                <h3 className="font-bold text-red-600 dark:text-red-400 mb-2">Error</h3>
+                                <p className="text-red-600 dark:text-red-400 text-sm mb-4">{error}</p>
+                                <button
+                                    onClick={handleRetry}
+                                    className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition"
+                                >
+                                    <RotateCcw size={16} />
+                                    Retry Access
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -251,35 +407,134 @@ const Advisory = () => {
                             </div>
                         </div>
 
+                        {/* Sunrise & Sunset + Daylight Hours */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                            {/* Sunrise */}
+                            <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-md border border-gray-100 dark:border-gray-800">
+                                <div className="flex items-center justify-between mb-3">
+                                    <span className="text-gray-600 dark:text-gray-400 font-semibold">Sunrise</span>
+                                    <Sun className="text-yellow-500" size={24} />
+                                </div>
+                                <p className="text-2xl font-bold text-gray-900 dark:text-white">🌅 {formatTime(weather.sys.sunrise)}</p>
+                                <p className="text-xs text-gray-500 mt-2">Early morning light</p>
+                            </div>
+
+                            {/* Daylight Hours */}
+                            <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-md border border-gray-100 dark:border-gray-800">
+                                <div className="flex items-center justify-between mb-3">
+                                    <span className="text-gray-600 dark:text-gray-400 font-semibold">Daylight</span>
+                                    <Sun className="text-orange-500" size={24} />
+                                </div>
+                                <p className="text-2xl font-bold text-gray-900 dark:text-white">{calculateDaylightHours(weather.sys.sunrise, weather.sys.sunset)} hrs</p>
+                                <p className="text-xs text-gray-500 mt-2">Hours of daylight</p>
+                            </div>
+
+                            {/* Sunset */}
+                            <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-md border border-gray-100 dark:border-gray-800">
+                                <div className="flex items-center justify-between mb-3">
+                                    <span className="text-gray-600 dark:text-gray-400 font-semibold">Sunset</span>
+                                    <Sun className="text-red-500" size={24} />
+                                </div>
+                                <p className="text-2xl font-bold text-gray-900 dark:text-white">🌇 {formatTime(weather.sys.sunset)}</p>
+                                <p className="text-xs text-gray-500 mt-2">Evening twilight</p>
+                            </div>
+                        </div>
+
+                        {/* Evapotranspiration (ET) Index */}
+                        {weather && (
+                            <div className={`mb-8 p-6 rounded-2xl border-2 ${calculateETIndex(weather.main.temp, weather.main.humidity).bgColor}`}>
+                                <div className="flex items-start gap-4">
+                                    <Droplet className={`${calculateETIndex(weather.main.temp, weather.main.humidity).color} flex-shrink-0`} size={32} />
+                                    <div className="flex-1">
+                                        <h3 className={`text-xl font-bold ${calculateETIndex(weather.main.temp, weather.main.humidity).color} mb-2`}>
+                                            Evapotranspiration (ET) Index: {calculateETIndex(weather.main.temp, weather.main.humidity).level}
+                                        </h3>
+                                        <p className={`${calculateETIndex(weather.main.temp, weather.main.humidity).color} mb-2`}>
+                                            {calculateETIndex(weather.main.temp, weather.main.humidity).advice}
+                                        </p>
+                                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
+                                            💡 ET Index is calculated based on temperature and humidity. High values indicate more water loss from soil and plants, requiring increased irrigation.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         {/* Advisory Cards */}
-                        <div className="space-y-4">
+                        <div className="space-y-4 mb-8">
                             <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">📋 Today's Advisory</h3>
 
                             {getAdvice(
                                 weather.main.temp,
                                 weather.main.humidity,
                                 weather.wind.speed * 3.6,
-                                weather.clouds.all
+                                weather.clouds.all,
+                                weather.rain?.['1h'] || 0
                             ).map((advice, idx) => (
                                 <div
                                     key={idx}
-                                    className={`p-6 rounded-2xl border-l-4 ${
-                                        advice.type === "warning"
-                                            ? "bg-red-50 dark:bg-red-900/20 border-red-500 text-red-700 dark:text-red-400"
-                                            : advice.type === "caution"
+                                    className={`p-6 rounded-2xl border-l-4 ${advice.type === "warning"
+                                        ? "bg-red-50 dark:bg-red-900/20 border-red-500 text-red-700 dark:text-red-400"
+                                        : advice.type === "caution"
                                             ? "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-500 text-yellow-700 dark:text-yellow-400"
                                             : advice.type === "success"
-                                            ? "bg-green-50 dark:bg-green-900/20 border-green-500 text-green-700 dark:text-green-400"
-                                            : "bg-blue-50 dark:bg-blue-900/20 border-blue-500 text-blue-700 dark:text-blue-400"
-                                    }`}
+                                                ? "bg-green-50 dark:bg-green-900/20 border-green-500 text-green-700 dark:text-green-400"
+                                                : "bg-blue-50 dark:bg-blue-900/20 border-blue-500 text-blue-700 dark:text-blue-400"
+                                        }`}
                                 >
                                     <p className="font-semibold text-lg">{advice.text}</p>
                                 </div>
                             ))}
                         </div>
 
+                        {/* 5-Day Forecast */}
+                        {forecast && forecast.length > 0 && (
+                            <div className="mb-8">
+                                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                                    <Calendar size={28} />
+                                    5-Day Forecast
+                                </h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                                    {forecast.map((day, idx) => {
+                                        const date = day.dt_txt.split(' ')[0];
+                                        const temp = Math.round(day.main.temp);
+                                        const description = day.weather[0].main;
+                                        const humidity = day.main.humidity;
+                                        const windSpeed = (day.wind.speed * 3.6).toFixed(1);
+                                        const etData = calculateETIndex(temp, humidity);
+
+                                        return (
+                                            <div
+                                                key={idx}
+                                                className="bg-white dark:bg-gray-900 p-4 rounded-2xl shadow-md border border-gray-100 dark:border-gray-800 hover:shadow-lg transition"
+                                            >
+                                                <p className="font-bold text-gray-900 dark:text-white mb-3">
+                                                    {formatDate(date)}
+                                                </p>
+                                                <div className="space-y-2">
+                                                    <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                                                        {temp}°C
+                                                    </div>
+                                                    <p className="text-sm text-gray-600 dark:text-gray-400 capitalize">
+                                                        {description}
+                                                    </p>
+                                                    <div className="text-xs text-gray-500 space-y-1 pt-2 border-t border-gray-200 dark:border-gray-700">
+                                                        <p>💧 {humidity}%</p>
+                                                        <p>💨 {windSpeed} km/h</p>
+                                                        <p className={`font-semibold ${etData.color}`}>
+                                                            ET: {etData.level}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
                         {/* Additional Info */}
-                        <div className="mt-8 p-6 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+                        <div className="p-6 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
                             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3">💡 Farming Tips</h3>
                             <ul className="space-y-2 text-gray-700 dark:text-gray-300 text-sm">
                                 <li>• Monitor soil moisture regularly to optimize irrigation</li>
@@ -287,6 +542,9 @@ const Advisory = () => {
                                 <li>• Protect crops from strong winds using windbreaks if necessary</li>
                                 <li>• Adjust fertilizer application based on weather conditions</li>
                                 <li>• Keep records of weather patterns for better crop planning</li>
+                                <li>• Use the 5-day forecast to plan irrigation and fertilizer schedules</li>
+                                <li>• Plan field work around sunrise and sunset times for optimal productivity</li>
+                                <li>• Higher ET Index values mean more frequent irrigation is needed</li>
                             </ul>
                         </div>
                     </>
