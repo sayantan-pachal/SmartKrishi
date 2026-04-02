@@ -14,8 +14,9 @@ export default function Crops() {
     const [fetchingCrops, setFetchingCrops] = useState(true);
     const [userId, setUserId] = useState(null);
     const [error, setError] = useState(null);
-    const [deletingId, setDeletingId] = useState(null); // Track which crop is being deleted
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState(null); // Show delete confirmation modal
+    const [deletingId, setDeletingId] = useState(null);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+    const [editingCrop, setEditingCrop] = useState(null);
 
     const [formData, setFormData] = useState({
         name: "",
@@ -105,30 +106,51 @@ export default function Crops() {
         try {
             console.log("📤 Saving crop with userId:", userId);
 
-            const payload = {
-                name: formData.name,
-                variety: formData.variety,
-                plantedDate: formData.plantedDate,
-                expectedHarvest: formData.expectedHarvest,
-                moisture: formData.moisture,
-                status: formData.status,
-                healthScore: formData.healthScore,
-                userId: userId,
-                image: `https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80&w=400`,
-                createdAt: new Date().toISOString()
-            };
+            if (editingCrop) {
+                // Update existing crop
+                const updatedCrop = await databases.updateDocument(
+                    DATABASE_ID,
+                    CROPS_COLLECTION_ID,
+                    editingCrop.$id,
+                    {
+                        name: formData.name,
+                        variety: formData.variety,
+                        plantedDate: formData.plantedDate,
+                        expectedHarvest: formData.expectedHarvest,
+                        moisture: formData.moisture,
+                        status: formData.status,
+                        healthScore: formData.healthScore,
+                    }
+                );
 
-            const newCrop = await databases.createDocument(
-                DATABASE_ID,
-                CROPS_COLLECTION_ID,
-                ID.unique(),
-                payload
-            );
+                console.log("✅ Crop updated:", updatedCrop.$id);
+                setCrops(prev => prev.map(crop => crop.$id === editingCrop.$id ? updatedCrop : crop));
+                setEditingCrop(null);
+            } else {
+                // Create new crop
+                const payload = {
+                    name: formData.name,
+                    variety: formData.variety,
+                    plantedDate: formData.plantedDate,
+                    expectedHarvest: formData.expectedHarvest,
+                    moisture: formData.moisture,
+                    status: formData.status,
+                    healthScore: formData.healthScore,
+                    userId: userId,
+                    image: `https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80&w=400`,
+                    createdAt: new Date().toISOString()
+                };
 
-            console.log("✅ Crop saved:", newCrop.$id);
+                const newCrop = await databases.createDocument(
+                    DATABASE_ID,
+                    CROPS_COLLECTION_ID,
+                    ID.unique(),
+                    payload
+                );
 
-            // ➕ Add to local state
-            setCrops(prev => [newCrop, ...prev]);
+                console.log("✅ Crop saved:", newCrop.$id);
+                setCrops(prev => [newCrop, ...prev]);
+            }
 
             // 🧹 Reset form
             setFormData({
@@ -163,8 +185,6 @@ export default function Crops() {
             );
 
             console.log("✅ Crop deleted:", cropId);
-
-            // Remove from local state
             setCrops(prev => prev.filter(crop => crop.$id !== cropId));
             setShowDeleteConfirm(null);
             setError(null);
@@ -174,6 +194,21 @@ export default function Crops() {
         } finally {
             setDeletingId(null);
         }
+    };
+
+    // ✏️ Handle edit crop
+    const handleEditCrop = (crop) => {
+        setEditingCrop(crop);
+        setFormData({
+            name: crop.name,
+            variety: crop.variety,
+            plantedDate: crop.plantedDate,
+            expectedHarvest: crop.expectedHarvest,
+            moisture: crop.moisture,
+            status: crop.status,
+            healthScore: crop.healthScore
+        });
+        setShowModal(true);
     };
 
     // 🔍 Filter crops
@@ -190,9 +225,26 @@ export default function Crops() {
         return days > 0 ? days : 0;
     };
 
+    // Format harvest date
+    const formatHarvestDate = (date) => {
+        return new Date(date).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+        });
+    };
+
+    // Get harvest status color
+    const getHarvestStatusColor = (harvestDate) => {
+        const daysLeft = getDaysUntilHarvest(harvestDate);
+        if (daysLeft <= 14) return 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400';
+        if (daysLeft <= 30) return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400';
+        return 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400';
+    };
+
     return (
         <div className="min-h-screen bg-[#f0fdf4] dark:bg-black pt-28 px-4 pb-12">
-            <div className="max-w-7xl mx-auto">
+            <div className="max-w-7xl mx-auto x-4 sm:px-6 lg:px-8">
 
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
@@ -204,7 +256,19 @@ export default function Crops() {
                         <p className="text-gray-600 dark:text-gray-400 mt-1">Manage and monitor your farm's active seasonal crops.</p>
                     </div>
                     <button
-                        onClick={() => setShowModal(true)}
+                        onClick={() => {
+                            setEditingCrop(null);
+                            setFormData({
+                                name: "",
+                                variety: "",
+                                plantedDate: "",
+                                expectedHarvest: "",
+                                moisture: "",
+                                status: "Healthy",
+                                healthScore: 90
+                            });
+                            setShowModal(true);
+                        }}
                         className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-2xl font-bold shadow-lg transition-all active:scale-95"
                     >
                         <Plus size={20} />
@@ -214,8 +278,9 @@ export default function Crops() {
 
                 {/* Error Display */}
                 {error && (
-                    <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-400">
-                        ⚠️ {error}
+                    <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-400 flex items-start justify-between">
+                        <span>⚠️ {error}</span>
+                        <button onClick={() => setError(null)} className="text-lg hover:text-red-900">×</button>
                     </div>
                 )}
 
@@ -249,15 +314,15 @@ export default function Crops() {
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {filteredCrops.map((crop) => (
-                            <div key={crop.$id} className="group relative bg-white dark:bg-gray-900 rounded-[2rem] border border-gray-100 dark:border-gray-800 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300">
+                            <div key={crop.$id} className="group relative bg-white dark:bg-gray-900 rounded-[2rem] border border-gray-100 dark:border-gray-800 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col h-full">
                                 <div className="relative h-48 overflow-hidden bg-gray-200 dark:bg-gray-800">
                                     {crop.image && (
                                         <img src={crop.image} alt={crop.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                                     )}
                                     <div className="absolute top-4 right-4 flex gap-2">
                                         <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold backdrop-blur-md ${crop.status === 'Healthy'
-                                                ? 'bg-green-500/20 text-green-200'
-                                                : 'bg-amber-500/20 text-amber-200'
+                                            ? 'bg-green-500/20 text-green-200'
+                                            : 'bg-amber-500/20 text-amber-200'
                                             }`}>
                                             {crop.status === 'Healthy' ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
                                             {crop.status}
@@ -272,9 +337,18 @@ export default function Crops() {
                                     >
                                         <Trash2 size={18} />
                                     </button>
+
+                                    {/* Edit Button */}
+                                    <button
+                                        onClick={() => handleEditCrop(crop)}
+                                        className="absolute bottom-4 right-4 px-3 py-1.5 bg-blue-500/20 hover:bg-blue-500/40 text-blue-200 rounded-lg backdrop-blur-md transition-all opacity-0 group-hover:opacity-100 text-xs font-bold"
+                                        title="Edit crop"
+                                    >
+                                        Edit
+                                    </button>
                                 </div>
 
-                                <div className="p-6">
+                                <div className="p-6 flex-1 flex flex-col">
                                     <div className="flex justify-between items-start mb-4">
                                         <div>
                                             <h3 className="text-xl font-bold text-gray-900 dark:text-white">{crop.name}</h3>
@@ -286,7 +360,7 @@ export default function Crops() {
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-4 py-4 border-y border-gray-50 dark:border-gray-800">
+                                    <div className="grid grid-cols-2 gap-4 py-4 border-y border-gray-50 dark:border-gray-800 mb-4 flex-1">
                                         <div className="flex items-center gap-3">
                                             <div className="p-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-lg">
                                                 <Droplets size={18} />
@@ -307,10 +381,16 @@ export default function Crops() {
                                         </div>
                                     </div>
 
-                                    <div className="mt-4 flex items-center justify-between">
+                                    <div className="flex items-center justify-between gap-3">
                                         <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
                                             <Calendar size={14} />
                                             <span className="text-xs font-medium">Planted: {new Date(crop.plantedDate).toLocaleDateString()}</span>
+                                        </div>
+
+                                        {/* ✅ Harvest Date Badge - Bottom Right */}
+                                        <div className={`px-2 py-1 rounded-lg text-xs font-bold whitespace-nowrap ${getHarvestStatusColor(crop.expectedHarvest)}`}>
+                                            <p className="text-[10px] uppercase font-bold mb-0.5">Harvest</p>
+                                            <p className="font-bold text-sm">{formatHarvestDate(crop.expectedHarvest)}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -320,14 +400,19 @@ export default function Crops() {
                 )}
             </div>
 
-            {/* Add Crop Modal */}
+            {/* Add/Edit Crop Modal */}
             {showModal && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
                     <div className="w-full max-w-md bg-white dark:bg-gray-900 rounded-[2rem] shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden">
                         <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-gray-800">
-                            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Add New Crop</h2>
+                            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                                {editingCrop ? "Edit Crop" : "Add New Crop"}
+                            </h2>
                             <button
-                                onClick={() => setShowModal(false)}
+                                onClick={() => {
+                                    setShowModal(false);
+                                    setEditingCrop(null);
+                                }}
                                 className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition"
                             >
                                 <X size={24} className="text-gray-600 dark:text-gray-400" />
@@ -441,7 +526,10 @@ export default function Crops() {
                             <div className="flex gap-3 pt-4">
                                 <button
                                     type="button"
-                                    onClick={() => setShowModal(false)}
+                                    onClick={() => {
+                                        setShowModal(false);
+                                        setEditingCrop(null);
+                                    }}
                                     className="flex-1 px-4 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold hover:bg-gray-200 dark:hover:bg-gray-700 transition"
                                 >
                                     Cancel
@@ -454,12 +542,12 @@ export default function Crops() {
                                     {loading ? (
                                         <>
                                             <Loader2 className="animate-spin" size={18} />
-                                            Adding...
+                                            {editingCrop ? "Updating..." : "Adding..."}
                                         </>
                                     ) : (
                                         <>
                                             <Plus size={18} />
-                                            Add Crop
+                                            {editingCrop ? "Update Crop" : "Add Crop"}
                                         </>
                                     )}
                                 </button>
