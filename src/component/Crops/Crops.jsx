@@ -5,6 +5,12 @@ import {
 } from 'lucide-react';
 import { databases, ID, account, DATABASE_ID, CROPS_COLLECTION_ID } from '../../appwrite/config';
 import { Query } from 'appwrite';
+import {
+    CROPS_ICONS,
+    DEFAULT_CROP_FORM,
+    CROP_STATUS_OPTIONS,
+    DEFAULT_CROP_IMAGE
+} from "../../data/CropsData";
 
 export default function Crops() {
     const [searchTerm, setSearchTerm] = useState("");
@@ -18,15 +24,7 @@ export default function Crops() {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
     const [editingCrop, setEditingCrop] = useState(null);
 
-    const [formData, setFormData] = useState({
-        name: "",
-        variety: "",
-        plantedDate: "",
-        expectedHarvest: "",
-        moisture: "",
-        status: "Healthy",
-        healthScore: 90
-    });
+    const [formData, setFormData] = useState(DEFAULT_CROP_FORM);
 
     // 🔑 Step 1: Get current user ID
     useEffect(() => {
@@ -137,7 +135,7 @@ export default function Crops() {
                     status: formData.status,
                     healthScore: formData.healthScore,
                     userId: userId,
-                    image: `https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80&w=400`,
+                    image: DEFAULT_CROP_IMAGE,
                     createdAt: new Date().toISOString()
                 };
 
@@ -153,15 +151,7 @@ export default function Crops() {
             }
 
             // 🧹 Reset form
-            setFormData({
-                name: "",
-                variety: "",
-                plantedDate: "",
-                expectedHarvest: "",
-                moisture: "",
-                status: "Healthy",
-                healthScore: 90
-            });
+            setFormData(DEFAULT_CROP_FORM);
             setShowModal(false);
             setError(null);
         } catch (error) {
@@ -243,7 +233,7 @@ export default function Crops() {
     };
 
     return (
-        <div className="min-h-screen bg-[#f0fdf4] dark:bg-black pt-28 px-4 pb-12">
+        <div className="min-h-screen pt-28 px-4 pb-12 bg-smartkrishi-light dark:bg-smartkrishi-dark">
             <div className="max-w-7xl mx-auto x-4 sm:px-6 lg:px-8">
 
                 {/* Header */}
@@ -518,8 +508,11 @@ export default function Crops() {
                                     onChange={handleInputChange}
                                     className="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-green-500 outline-none transition dark:text-white"
                                 >
-                                    <option value="Healthy">Healthy</option>
-                                    <option value="Attention">Needs Attention</option>
+                                    {CROP_STATUS_OPTIONS.map(option => (
+                                        <option key={option.value} value={option.value}>
+                                            {option.label}
+                                        </option>
+                                    ))}
                                 </select>
                             </div>
 

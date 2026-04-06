@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import Logo from "../Header/Logo";
+import Logo from "./../../../public/Logo";
 import { Leaf, CloudRain, Bug, TabletSmartphone, Monitor } from "lucide-react";
 
 export default function Footer() {

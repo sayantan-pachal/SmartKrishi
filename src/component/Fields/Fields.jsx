@@ -1,263 +1,226 @@
 /* eslint-disable no-unused-vars */
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
-    Map as MapIcon,
-    Plus,
-    Droplets,
-    FlaskConical,
-    Navigation,
-    Trash2,
-    Search,
-    X,
-    Calendar,
-    Activity,
-    Edit,
-    AlertCircle,
-    Loader2,
-    Leaf
+    Map as MapIcon, Plus, Droplets, FlaskConical,
+    Navigation, Trash2, Search, X, Calendar,
+    Activity, Edit, AlertCircle, Loader2, Leaf,
 } from "lucide-react";
 import { databases, account, DATABASE_ID, FIELDS_COLLECTION_ID } from "../../appwrite/config";
 import { Query } from "appwrite";
 
+import {
+    SOIL_METRIC_CARDS,
+    NPK_CARDS,
+    FIELD_STATUS_OPTIONS,
+    FORM_FIELD_GROUPS,
+    DEFAULT_FORM_DATA,
+    getStatusStyle,
+    validateFieldForm,
+    buildFieldPayload,
+    fieldDocToFormData,
+    filterFields,
+    formatFieldDate,
+} from "../../data/FieldsData";
+
 const COLLECTION_ID = FIELDS_COLLECTION_ID;
 
-// Memoized Detail Card Component
-const DetailCard = React.memo(({ icon: Icon, label, value, color, bg }) => (
-    <div className={`${bg} dark:bg-opacity-10 p-4 rounded-2xl flex flex-col items-start gap-1`}>
-        <Icon size={18} className={color} />
-        <span className="text-[10px] font-bold text-gray-400 uppercase">{label}</span>
-        <span className="text-lg font-bold text-gray-800 dark:text-gray-200">{value}</span>
+
+// ─── DetailCard ───────────────────────────────────────────────────────────────
+const DetailCard = React.memo(({ icon: Icon, label, value, iconColor, bg }) => (
+    <div className={`${bg} dark:bg-opacity-10 p-4 rounded-2xl flex flex-col gap-1.5`}>
+        <Icon size={16} className={iconColor} />
+        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{label}</span>
+        <span className="text-base font-bold text-gray-800 dark:text-gray-200">{value || "N/A"}</span>
     </div>
 ));
-
 DetailCard.displayName = "DetailCard";
 
-// Memoized Field Card Component
-const FieldCard = React.memo(({ field, onViewDetails, onEdit, onDelete }) => (
-    <div className="group bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 p-6 hover:shadow-xl transition-all duration-300 relative overflow-hidden">
-        {/* Status Badge */}
-        <div
-            className={`absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-bold ${
-                field.status === "Healthy"
-                    ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                    : "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
-            }`}
-        >
-            {field.status}
-        </div>
 
-        <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-1">{field.name}</h3>
-        <p className="text-sm text-gray-500 mb-6 flex items-center gap-1">
-            <Navigation size={14} /> {field.size} • Current: {field.crop}
-        </p>
+// ─── FieldCard ────────────────────────────────────────────────────────────────
+const FieldCard = React.memo(({ field, onViewDetails, onEdit, onDelete }) => {
+    const statusStyle = getStatusStyle(field.status);
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
-            <div className="bg-blue-50 dark:bg-blue-900/10 p-3 rounded-2xl">
-                <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 mb-1">
-                    <Droplets size={16} />
-                    <span className="text-xs font-bold uppercase">Moisture</span>
-                </div>
-                <p className="text-lg font-bold text-gray-800 dark:text-gray-200">{field.moisture || 'N/A'}</p>
+    return (
+        <div className="group bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 p-6 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 relative overflow-hidden">
+            {/* Status badge */}
+            <span className={`absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-bold ${statusStyle.badge}`}>
+                {field.status}
+            </span>
+
+            {/* Field name + size */}
+            <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-1 pr-28 leading-tight">
+                {field.name}
+            </h3>
+            <p className="text-sm text-gray-400 mb-5 flex items-center gap-1.5">
+                <Navigation size={13} />
+                <span>{field.size}</span>
+                <span className="mx-1 text-gray-300">·</span>
+                <Leaf size={13} className="text-green-500" />
+                <span>{field.crop}</span>
+            </p>
+
+            {/* Soil metrics */}
+            <div className="grid grid-cols-2 gap-3 mb-5">
+                {SOIL_METRIC_CARDS.map(({ key, label, icon: Icon, iconClass, bg, darkBg }) => (
+                    <div key={key} className={`${bg} ${darkBg} p-3 rounded-2xl`}>
+                        <div className={`flex items-center gap-1.5 ${iconClass} mb-1`}>
+                            <Icon size={14} />
+                            <span className="text-[10px] font-bold uppercase tracking-wide">{label}</span>
+                        </div>
+                        <p className="text-base font-bold text-gray-800 dark:text-gray-200">
+                            {field[key] || "N/A"}
+                        </p>
+                    </div>
+                ))}
             </div>
 
-            <div className="bg-purple-50 dark:bg-purple-900/10 p-3 rounded-2xl">
-                <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 mb-1">
-                    <FlaskConical size={16} />
-                    <span className="text-xs font-bold uppercase">Soil PH</span>
-                </div>
-                <p className="text-lg font-bold text-gray-800 dark:text-gray-200">{field.ph || 'N/A'}</p>
+            {/* Actions */}
+            <div className="flex items-center gap-2">
+                <button
+                    onClick={() => onViewDetails(field)}
+                    className="flex-1 py-2.5 bg-gray-50 dark:bg-gray-800 hover:bg-green-50 dark:hover:bg-green-900/20 hover:text-green-700 dark:hover:text-green-400 text-gray-600 dark:text-gray-300 text-sm font-semibold rounded-xl transition-colors border border-gray-100 dark:border-gray-700"
+                >
+                    View Details
+                </button>
+                <button
+                    onClick={() => onEdit(field)}
+                    className="p-2.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl transition-colors"
+                    aria-label="Edit field"
+                >
+                    <Edit size={18} />
+                </button>
+                <button
+                    onClick={() => onDelete(field.$id)}
+                    className="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors"
+                    aria-label="Delete field"
+                >
+                    <Trash2 size={18} />
+                </button>
             </div>
         </div>
-
-        <div className="flex items-center justify-between gap-3">
-            <button
-                onClick={() => onViewDetails(field)}
-                className="flex-1 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-xl transition-colors"
-            >
-                View Details
-            </button>
-            <button
-                onClick={() => onEdit(field)}
-                className="p-2 text-gray-400 hover:text-blue-500 transition-colors"
-                aria-label="Edit field"
-            >
-                <Edit size={20} />
-            </button>
-            <button
-                onClick={() => onDelete(field.$id)}
-                className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-                aria-label="Delete field"
-            >
-                <Trash2 size={20} />
-            </button>
-        </div>
-    </div>
-));
-
+    );
+});
 FieldCard.displayName = "FieldCard";
 
-// Modal Component - Show all details including NPK
+
+// ─── FieldModal ───────────────────────────────────────────────────────────────
 const FieldModal = React.memo(({ field, isOpen, onClose }) => {
     const modalRef = useRef(null);
 
     useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (modalRef.current && !modalRef.current.contains(event.target)) {
-                onClose();
-            }
+        if (!isOpen) return;
+        const handler = (e) => {
+            if (modalRef.current && !modalRef.current.contains(e.target)) onClose();
         };
-
-        if (isOpen) {
-            document.addEventListener("mousedown", handleClickOutside);
-            return () => document.removeEventListener("mousedown", handleClickOutside);
-        }
+        document.addEventListener("mousedown", handler);
+        return () => document.removeEventListener("mousedown", handler);
     }, [isOpen, onClose]);
 
     if (!isOpen || !field) return null;
+
+    const statusStyle = getStatusStyle(field.status);
 
     return (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
             <div
                 ref={modalRef}
-                className="bg-white dark:bg-gray-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[85vh]"
+                className="bg-white dark:bg-gray-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in fade-in zoom-in duration-200"
             >
-                {/* Modal Header */}
-                <div className="relative h-32 bg-gradient-to-r from-green-500 to-emerald-600 p-6 flex-shrink-0">
+                {/* Header */}
+                <div className="relative h-32 bg-gradient-to-r from-green-600 to-emerald-500 p-6 flex-shrink-0">
                     <button
                         onClick={onClose}
                         className="absolute top-4 right-4 p-2 bg-white/20 hover:bg-white/30 rounded-full text-white transition-colors"
-                        aria-label="Close modal"
+                        aria-label="Close"
                     >
-                        <X size={20} />
+                        <X size={18} />
                     </button>
-                    <h2 className="text-2xl font-bold text-white mt-4">{field.name}</h2>
-                    <p className="text-green-50 text-sm">Detailed Field Analysis</p>
+                    <div className="mt-3">
+                        <h2 className="text-2xl font-bold text-white leading-tight">{field.name}</h2>
+                        <p className="text-green-100 text-sm mt-0.5">Field Analysis</p>
+                    </div>
                 </div>
 
-                {/* Modal Body - Scrollable */}
-                <div className="overflow-y-auto flex-1">
-                    <div className="p-8 space-y-6">
-                        {/* Basic Info */}
-                        <div className="space-y-3">
-                            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
-                                <span className="text-xs font-bold text-gray-500 uppercase">Field Size</span>
-                                <span className="text-lg font-bold text-gray-800 dark:text-gray-200">{field.size}</span>
+                {/* Body */}
+                <div className="overflow-y-auto flex-1 p-6 space-y-6">
+                    {/* Basic info */}
+                    <div className="grid grid-cols-2 gap-3">
+                        {[
+                            { label: "Size", value: field.size },
+                            { label: "Crop", value: field.crop },
+                        ].map(({ label, value }) => (
+                            <div key={label} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">{label}</p>
+                                <p className="font-bold text-gray-800 dark:text-gray-200">{value}</p>
                             </div>
-                            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
-                                <span className="text-xs font-bold text-gray-500 uppercase">Current Crop</span>
-                                <span className="text-lg font-bold text-gray-800 dark:text-gray-200">{field.crop}</span>
-                            </div>
-                        </div>
-
-                        {/* Soil Metrics Grid */}
-                        <div>
-                            <h3 className="text-sm font-bold text-gray-500 uppercase mb-3">Soil Metrics</h3>
-                            <div className="grid grid-cols-2 gap-4 mb-8">
-                                <DetailCard
-                                    icon={Droplets}
-                                    label="Moisture"
-                                    value={field.moisture || 'N/A'}
-                                    color="text-blue-500"
-                                    bg="bg-blue-50"
-                                />
-                                <DetailCard
-                                    icon={FlaskConical}
-                                    label="Soil PH"
-                                    value={field.ph || 'N/A'}
-                                    color="text-purple-500"
-                                    bg="bg-purple-50"
-                                />
-                            </div>
-                        </div>
-
-                        {/* NPK Analysis */}
-                        <div>
-                            <h3 className="text-sm font-bold text-gray-500 uppercase mb-3">NPK Analysis</h3>
-                            <div className="grid grid-cols-3 gap-3 mb-8">
-                                <DetailCard
-                                    icon={Leaf}
-                                    label="Nitrogen (N)"
-                                    value={field.nitrogen || 'N/A'}
-                                    color="text-green-500"
-                                    bg="bg-green-50"
-                                />
-                                <DetailCard
-                                    icon={Activity}
-                                    label="Phosphorus (P)"
-                                    value={field.phosphorus || 'N/A'}
-                                    color="text-orange-500"
-                                    bg="bg-orange-50"
-                                />
-                                <DetailCard
-                                    icon={Droplets}
-                                    label="Potassium (K)"
-                                    value={field.potassium || 'N/A'}
-                                    color="text-pink-500"
-                                    bg="bg-pink-50"
-                                />
-                            </div>
-                        </div>
-
-                        {/* Status & Recommendations */}
-                        <div className="space-y-4">
-                            <div className="p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
-                                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">
-                                    Field Status
-                                </p>
-                                <p className="text-gray-700 dark:text-gray-300 font-semibold">
-                                    {field.status === "Healthy" ? "✅ Field is in good condition" : "⚠️ Requires attention"}
-                                </p>
-                            </div>
-
-                            <div className="p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
-                                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">
-                                    Recommended Action
-                                </p>
-                                <p className="text-gray-700 dark:text-gray-300">
-                                    {field.status === "Healthy"
-                                        ? "Maintain current irrigation schedule. Continue monitoring soil metrics regularly."
-                                        : "Check moisture levels and adjust irrigation accordingly. Consider nutrient supplementation if needed."}
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Metadata */}
-                        <div className="text-xs text-gray-400 space-y-1">
-                            <p>Created: {new Date(field.$createdAt).toLocaleDateString()}</p>
-                            <p>Last Updated: {new Date(field.$updatedAt).toLocaleDateString()}</p>
-                        </div>
-
-                        <button
-                            onClick={onClose}
-                            className="w-full py-4 bg-gray-900 dark:bg-white dark:text-black text-white font-bold rounded-2xl hover:opacity-90 transition-opacity"
-                        >
-                            Close Analysis
-                        </button>
+                        ))}
                     </div>
+
+                    {/* Soil metrics */}
+                    <div>
+                        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Soil Metrics</h4>
+                        <div className="grid grid-cols-2 gap-3">
+                            {SOIL_METRIC_CARDS.map((m) => (
+                                <DetailCard key={m.key} icon={m.icon} label={m.label} value={field[m.key]} iconColor={m.iconColor} bg={m.bg} />
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* NPK */}
+                    <div>
+                        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">NPK Analysis</h4>
+                        <div className="grid grid-cols-3 gap-3">
+                            {NPK_CARDS.map((m) => (
+                                <DetailCard key={m.key} icon={m.icon} label={m.label} value={field[m.key]} iconColor={m.iconColor} bg={m.bg} />
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Status & recommendation */}
+                    <div className="space-y-3">
+                        <div className="p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Status</p>
+                            <p className="font-semibold text-gray-700 dark:text-gray-300">
+                                {statusStyle.icon} {statusStyle.label}
+                            </p>
+                        </div>
+                        <div className="p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Recommended Action</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{statusStyle.action}</p>
+                        </div>
+                    </div>
+
+                    {/* Metadata */}
+                    <div className="text-xs text-gray-400 space-y-0.5 pt-1">
+                        <p>Created: {formatFieldDate(field.$createdAt)}</p>
+                        <p>Updated: {formatFieldDate(field.$updatedAt)}</p>
+                    </div>
+
+                    <button
+                        onClick={onClose}
+                        className="w-full py-3.5 bg-gray-900 dark:bg-white dark:text-black text-white font-bold rounded-2xl hover:opacity-90 transition-opacity"
+                    >
+                        Close Analysis
+                    </button>
                 </div>
             </div>
         </div>
     );
 });
-
 FieldModal.displayName = "FieldModal";
 
-// Delete Confirmation Modal
+
+// ─── DeleteConfirmModal ───────────────────────────────────────────────────────
 const DeleteConfirmModal = React.memo(({ isOpen, fieldName, onConfirm, onCancel, isDeleting }) => {
     const modalRef = useRef(null);
 
     useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (modalRef.current && !modalRef.current.contains(event.target)) {
-                onCancel();
-            }
+        if (!isOpen) return;
+        const handler = (e) => {
+            if (modalRef.current && !modalRef.current.contains(e.target)) onCancel();
         };
-
-        if (isOpen) {
-            document.addEventListener("mousedown", handleClickOutside);
-            return () => document.removeEventListener("mousedown", handleClickOutside);
-        }
+        document.addEventListener("mousedown", handler);
+        return () => document.removeEventListener("mousedown", handler);
     }, [isOpen, onCancel]);
 
     if (!isOpen) return null;
@@ -266,52 +229,35 @@ const DeleteConfirmModal = React.memo(({ isOpen, fieldName, onConfirm, onCancel,
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
             <div
                 ref={modalRef}
-                className="bg-white dark:bg-gray-900 w-full max-w-sm rounded-[2.5rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200"
+                className="bg-white dark:bg-gray-900 w-full max-w-sm rounded-[2.5rem] shadow-2xl animate-in fade-in zoom-in duration-200"
             >
-                {/* Modal Body */}
-                <div className="p-8">
-                    <div className="flex items-center justify-center mb-4">
-                        <div className="p-3 bg-red-100 dark:bg-red-900/20 rounded-full">
-                            <AlertCircle className="text-red-600 dark:text-red-400" size={32} />
-                        </div>
+                <div className="p-8 text-center">
+                    <div className="inline-flex p-4 bg-red-50 dark:bg-red-900/20 rounded-full mb-4">
+                        <AlertCircle className="text-red-600 dark:text-red-400" size={28} />
                     </div>
-
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white text-center mb-2">
-                        Delete Field?
-                    </h3>
-
-                    <p className="text-gray-600 dark:text-gray-400 text-center mb-2">
-                        Are you sure you want to delete <span className="font-semibold">"{fieldName}"</span>?
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Delete Field?</h3>
+                    <p className="text-gray-600 dark:text-gray-400 mb-1">
+                        Delete <span className="font-semibold">"{fieldName}"</span>?
                     </p>
+                    <p className="text-sm text-gray-400 mb-6">This action cannot be undone.</p>
 
-                    <p className="text-gray-500 dark:text-gray-500 text-sm text-center mb-6">
-                        This action cannot be undone.
-                    </p>
-
-                    {/* Buttons */}
                     <div className="flex gap-3">
                         <button
                             onClick={onCancel}
                             disabled={isDeleting}
-                            className="flex-1 px-4 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex-1 px-4 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
                         >
                             Cancel
                         </button>
                         <button
                             onClick={onConfirm}
                             disabled={isDeleting}
-                            className="flex-1 px-4 py-3 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            className="flex-1 px-4 py-3 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
                         >
                             {isDeleting ? (
-                                <>
-                                    <Loader2 className="animate-spin" size={18} />
-                                    Deleting...
-                                </>
+                                <><Loader2 className="animate-spin" size={16} /> Deleting…</>
                             ) : (
-                                <>
-                                    <Trash2 size={18} />
-                                    Delete
-                                </>
+                                <><Trash2 size={16} /> Delete</>
                             )}
                         </button>
                     </div>
@@ -320,342 +266,180 @@ const DeleteConfirmModal = React.memo(({ isOpen, fieldName, onConfirm, onCancel,
         </div>
     );
 });
-
 DeleteConfirmModal.displayName = "DeleteConfirmModal";
 
-// Add/Edit Field Form Modal
+
+// ─── FormFieldModal ───────────────────────────────────────────────────────────
 const FormFieldModal = React.memo(({ isOpen, onClose, onSubmit, initialData = null, isEditMode = false }) => {
     const modalRef = useRef(null);
-    const [formData, setFormData] = useState({
-        name: "",
-        size: "",
-        crop: "",
-        moisture: "",
-        ph: "",
-        nitrogen: "",
-        phosphorus: "",
-        potassium: "",
-        status: "Healthy",
-    });
+    const [formData, setFormData] = useState(DEFAULT_FORM_DATA);
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Initialize form data when initialData changes
     useEffect(() => {
-        if (initialData) {
-            setFormData({
-                name: initialData.name,
-                size: initialData.size ? initialData.size.replace(" Acres", "") : "",
-                crop: initialData.crop,
-                moisture: initialData.moisture || "",
-                ph: initialData.ph || "",
-                nitrogen: initialData.nitrogen || "",
-                phosphorus: initialData.phosphorus || "",
-                potassium: initialData.potassium || "",
-                status: initialData.status || "Healthy",
-            });
-        } else {
-            setFormData({
-                name: "",
-                size: "",
-                crop: "",
-                moisture: "",
-                ph: "",
-                nitrogen: "",
-                phosphorus: "",
-                potassium: "",
-                status: "Healthy",
-            });
-        }
+        setFormData(initialData ? fieldDocToFormData(initialData) : DEFAULT_FORM_DATA);
         setErrors({});
     }, [initialData, isOpen]);
 
-    const handleClickOutside = useCallback((event) => {
-        if (modalRef.current && !modalRef.current.contains(event.target)) {
-            onClose();
-        }
-    }, [onClose]);
+    const handleClickOutside = useCallback(
+        (e) => { if (modalRef.current && !modalRef.current.contains(e.target)) onClose(); },
+        [onClose]
+    );
 
     useEffect(() => {
-        if (isOpen) {
-            document.addEventListener("mousedown", handleClickOutside);
-            return () => document.removeEventListener("mousedown", handleClickOutside);
-        }
+        if (!isOpen) return;
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [isOpen, handleClickOutside]);
-
-    const validateForm = () => {
-        const newErrors = {};
-        if (!formData.name.trim()) newErrors.name = "Field name is required";
-        if (!formData.size.trim()) newErrors.size = "Size is required";
-        if (!formData.crop.trim()) newErrors.crop = "Crop type is required";
-
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    };
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
-        if (errors[name]) {
-            setErrors((prev) => ({ ...prev, [name]: "" }));
-        }
+        if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (validateForm()) {
-            setIsSubmitting(true);
-            try {
-                await onSubmit(formData);
-                setFormData({
-                    name: "",
-                    size: "",
-                    crop: "",
-                    moisture: "",
-                    ph: "",
-                    nitrogen: "",
-                    phosphorus: "",
-                    potassium: "",
-                    status: "Healthy",
-                });
-                setErrors({});
-            } catch (error) {
-                console.error("Error submitting form:", error);
-                setErrors({ submit: "Failed to submit form. Please try again." });
-            } finally {
-                setIsSubmitting(false);
-            }
+        const validationErrors = validateFieldForm(formData);
+        if (Object.keys(validationErrors).length > 0) { setErrors(validationErrors); return; }
+
+        setIsSubmitting(true);
+        try {
+            await onSubmit(formData);
+            setFormData(DEFAULT_FORM_DATA);
+            setErrors({});
+        } catch (error) {
+            console.error("Form submit error:", error);
+            setErrors({ submit: "Failed to save field. Please try again." });
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
     if (!isOpen) return null;
 
+    const inputBase =
+        "w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 outline-none dark:text-white disabled:opacity-50 transition text-sm";
+
     return (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
             <div
                 ref={modalRef}
-                className="bg-white dark:bg-gray-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]"
+                className="bg-white dark:bg-gray-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-200"
             >
-                {/* Modal Header */}
-                <div className="relative h-32 bg-gradient-to-r from-green-500 to-emerald-600 p-6 flex-shrink-0">
+                {/* Header */}
+                <div className="relative h-28 bg-gradient-to-r from-green-600 to-emerald-500 p-6 flex-shrink-0">
                     <button
                         onClick={onClose}
-                        className="absolute top-4 right-4 p-2 bg-white/20 hover:bg-white/30 rounded-full text-white transition-colors"
-                        aria-label="Close modal"
                         disabled={isSubmitting}
+                        className="absolute top-4 right-4 p-2 bg-white/20 hover:bg-white/30 rounded-full text-white transition-colors disabled:opacity-50"
+                        aria-label="Close"
                     >
-                        <X size={20} />
+                        <X size={18} />
                     </button>
-                    <h2 className="text-2xl font-bold text-white mt-4">
-                        {isEditMode ? "Edit Field" : "Add New Field"}
-                    </h2>
-                    <p className="text-green-50 text-sm">
-                        {isEditMode ? "Update the details of your field" : "Fill in the details of your field"}
-                    </p>
+                    <div className="mt-1">
+                        <h2 className="text-xl font-bold text-white">
+                            {isEditMode ? "Edit Field" : "Add New Field"}
+                        </h2>
+                        <p className="text-green-100 text-sm">
+                            {isEditMode ? "Update field details" : "Fill in your field details"}
+                        </p>
+                    </div>
                 </div>
 
-                {/* Modal Body - Scrollable */}
-                <form onSubmit={handleSubmit} className="overflow-y-auto flex-1">
-                    <div className="p-8 space-y-4">
-                        {errors.submit && (
-                            <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
-                                <p className="text-red-600 dark:text-red-400 text-sm font-semibold">{errors.submit}</p>
-                            </div>
-                        )}
-
-                        {/* Field Name */}
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                Field Name <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                name="name"
-                                value={formData.name}
-                                onChange={handleChange}
-                                placeholder="e.g., North Paddy Field"
-                                disabled={isSubmitting}
-                                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 outline-none dark:text-white disabled:opacity-50"
-                            />
-                            {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+                {/* Form */}
+                <form onSubmit={handleSubmit} className="overflow-y-auto flex-1 p-6 space-y-5">
+                    {errors.submit && (
+                        <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
+                            <p className="text-red-600 dark:text-red-400 text-sm font-semibold">{errors.submit}</p>
                         </div>
+                    )}
 
-                        {/* Size and Crop */}
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                    Size (Acres) <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="number"
-                                    name="size"
-                                    value={formData.size}
-                                    onChange={handleChange}
-                                    placeholder="e.g., 2.5"
-                                    step="0.1"
-                                    disabled={isSubmitting}
-                                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 outline-none dark:text-white disabled:opacity-50"
-                                />
-                                {errors.size && <p className="text-red-500 text-xs mt-1">{errors.size}</p>}
-                            </div>
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                    Crop Type <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    name="crop"
-                                    value={formData.crop}
-                                    onChange={handleChange}
-                                    placeholder="e.g., Rice"
-                                    disabled={isSubmitting}
-                                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 outline-none dark:text-white disabled:opacity-50"
-                                />
-                                {errors.crop && <p className="text-red-500 text-xs mt-1">{errors.crop}</p>}
+                    {FORM_FIELD_GROUPS.map((group, gi) => (
+                        <div key={gi}>
+                            {group.heading && (
+                                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
+                                    {group.heading}
+                                </h3>
+                            )}
+                            <div className={`grid gap-3 ${group.fields.length === 3 ? "grid-cols-3" : group.fields.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
+                                {group.fields.map((f) => (
+                                    <div key={f.name} className={f.colSpan === 2 ? "col-span-full" : ""}>
+                                        <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">
+                                            {f.label} {f.required && <span className="text-red-500">*</span>}
+                                        </label>
+                                        <input
+                                            type={f.type}
+                                            name={f.name}
+                                            value={formData[f.name]}
+                                            onChange={handleChange}
+                                            placeholder={f.placeholder}
+                                            step={f.step}
+                                            disabled={isSubmitting}
+                                            className={inputBase}
+                                        />
+                                        {errors[f.name] && (
+                                            <p className="text-red-500 text-xs mt-1">{errors[f.name]}</p>
+                                        )}
+                                    </div>
+                                ))}
                             </div>
                         </div>
+                    ))}
 
-                        {/* Soil Metrics */}
-                        <div>
-                            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Soil Metrics</h3>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                        Moisture (%)
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="moisture"
-                                        value={formData.moisture}
-                                        onChange={handleChange}
-                                        placeholder="e.g., 45%"
-                                        disabled={isSubmitting}
-                                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 outline-none dark:text-white disabled:opacity-50"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                        Soil PH
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="ph"
-                                        value={formData.ph}
-                                        onChange={handleChange}
-                                        placeholder="e.g., 6.5"
-                                        disabled={isSubmitting}
-                                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 outline-none dark:text-white disabled:opacity-50"
-                                    />
-                                </div>
-                            </div>
-                        </div>
+                    {/* Status */}
+                    <div>
+                        <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">
+                            Status
+                        </label>
+                        <select
+                            name="status"
+                            value={formData.status}
+                            onChange={handleChange}
+                            disabled={isSubmitting}
+                            className={inputBase}
+                        >
+                            {FIELD_STATUS_OPTIONS.map((opt) => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                        </select>
+                    </div>
 
-                        {/* NPK Analysis */}
-                        <div>
-                            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">NPK Analysis</h3>
-                            <div className="grid grid-cols-3 gap-3">
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                        Nitrogen (mg/kg)
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="nitrogen"
-                                        value={formData.nitrogen}
-                                        onChange={handleChange}
-                                        placeholder="e.g., 250"
-                                        disabled={isSubmitting}
-                                        className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 outline-none dark:text-white disabled:opacity-50 text-sm"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                        Phosphorus (mg/kg)
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="phosphorus"
-                                        value={formData.phosphorus}
-                                        onChange={handleChange}
-                                        placeholder="e.g., 30"
-                                        disabled={isSubmitting}
-                                        className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 outline-none dark:text-white disabled:opacity-50 text-sm"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                        Potassium (mg/kg)
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="potassium"
-                                        value={formData.potassium}
-                                        onChange={handleChange}
-                                        placeholder="e.g., 150"
-                                        disabled={isSubmitting}
-                                        className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 outline-none dark:text-white disabled:opacity-50 text-sm"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Status */}
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                Status
-                            </label>
-                            <select
-                                name="status"
-                                value={formData.status}
-                                onChange={handleChange}
-                                disabled={isSubmitting}
-                                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 outline-none dark:text-white disabled:opacity-50"
-                            >
-                                <option value="Healthy">Healthy</option>
-                                <option value="Needs Water">Needs Water</option>
-                                <option value="Needs Nutrients">Needs Nutrients</option>
-                            </select>
-                        </div>
-
-                        {/* Submit and Cancel Buttons */}
-                        <div className="flex gap-3 pt-6">
-                            <button
-                                type="button"
-                                onClick={onClose}
-                                disabled={isSubmitting}
-                                className="flex-1 py-3 bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold rounded-xl hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={isSubmitting}
-                                className="flex-1 py-3 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition-colors active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
-                            >
-                                {isSubmitting ? (
-                                    <>
-                                        <Loader2 className="animate-spin" size={18} />
-                                        Processing...
-                                    </>
-                                ) : (
-                                    isEditMode ? "Update Field" : "Add Field"
-                                )}
-                            </button>
-                        </div>
+                    {/* Buttons */}
+                    <div className="flex gap-3 pt-2">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            disabled={isSubmitting}
+                            className="flex-1 py-3 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="flex-1 py-3 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition-colors active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
+                            {isSubmitting ? (
+                                <><Loader2 className="animate-spin" size={16} /> Processing…</>
+                            ) : (
+                                isEditMode ? "Update Field" : "Add Field"
+                            )}
+                        </button>
                     </div>
                 </form>
             </div>
         </div>
     );
 });
-
 FormFieldModal.displayName = "FormFieldModal";
 
-// Main Fields Component
+
+// ─── Fields (main) ────────────────────────────────────────────────────────────
 function Fields() {
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedField, setSelectedField] = useState(null);
-    const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+    const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingField, setEditingField] = useState(null);
     const [fields, setFields] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -664,194 +448,92 @@ function Fields() {
     const [deleteConfirm, setDeleteConfirm] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
 
-    // 🔑 Get current user ID
+    // Auth
     useEffect(() => {
-        const getAccount = async () => {
-            try {
-                const user = await account.get();
-                console.log("✅ User logged in:", user.$id);
-                setUserId(user.$id);
-            } catch (err) {
-                console.error("❌ User not logged in:", err);
-                setError("Please log in to view fields");
-            }
-        };
-        getAccount();
+        account.get()
+            .then((u) => setUserId(u.$id))
+            .catch(() => setError("Please log in to view your fields."));
     }, []);
 
-    // 📥 Fetch fields from Appwrite (user-specific)
+    // Fetch fields
     useEffect(() => {
-        if (!userId) {
-            console.log("⏳ Waiting for userId...");
-            return;
-        }
-
-        const fetchFields = async () => {
+        if (!userId) return;
+        const load = async () => {
             try {
                 setLoading(true);
                 setError(null);
-                console.log("🔍 Fetching fields for userId:", userId);
-
-                const response = await databases.listDocuments(
-                    DATABASE_ID,
-                    COLLECTION_ID,
-                    [Query.equal("userId", userId)]
-                );
-
-                console.log("✅ Fields fetched:", response.documents.length);
-                setFields(response.documents);
+                const res = await databases.listDocuments(DATABASE_ID, COLLECTION_ID, [
+                    Query.equal("userId", userId),
+                ]);
+                setFields(res.documents);
             } catch (err) {
-                console.error("Error fetching fields:", err.message);
                 setError("Failed to load fields. Please try again.");
             } finally {
                 setLoading(false);
             }
         };
-
-        fetchFields();
+        load();
     }, [userId]);
 
-    // 🗑️ Handle delete with confirmation
+    // Delete
     const handleDeleteClick = useCallback((fieldId, fieldName) => {
         setDeleteConfirm({ fieldId, fieldName });
     }, []);
 
     const handleConfirmDelete = useCallback(async () => {
         if (!deleteConfirm) return;
-
         setIsDeleting(true);
         try {
-            console.log("🗑️ Deleting field:", deleteConfirm.fieldId);
-
-            await databases.deleteDocument(
-                DATABASE_ID,
-                COLLECTION_ID,
-                deleteConfirm.fieldId
-            );
-
-            console.log("✅ Field deleted:", deleteConfirm.fieldId);
-
-            setFields((prevFields) =>
-                prevFields.filter((field) => field.$id !== deleteConfirm.fieldId)
-            );
+            await databases.deleteDocument(DATABASE_ID, COLLECTION_ID, deleteConfirm.fieldId);
+            setFields((prev) => prev.filter((f) => f.$id !== deleteConfirm.fieldId));
             setDeleteConfirm(null);
-            setError(null);
-        } catch (err) {
-            console.error("Error deleting field:", err.message);
+        } catch {
             setError("Failed to delete field. Please try again.");
         } finally {
             setIsDeleting(false);
         }
     }, [deleteConfirm]);
 
-    const handleAddField = useCallback(async (formData) => {
-        if (!userId) {
-            setError("User not authenticated");
-            return;
+    // Add / Edit
+    const handleSaveField = useCallback(async (formData) => {
+        if (!userId) { setError("User not authenticated."); return; }
+
+        if (editingField) {
+            const payload = buildFieldPayload(formData);
+            await databases.updateDocument(DATABASE_ID, COLLECTION_ID, editingField.$id, payload);
+            setFields((prev) =>
+                prev.map((f) => (f.$id === editingField.$id ? { ...f, ...payload } : f))
+            );
+            setEditingField(null);
+        } else {
+            const payload = buildFieldPayload(formData, userId);
+            const doc = await databases.createDocument(DATABASE_ID, COLLECTION_ID, "unique()", payload);
+            setFields((prev) => [doc, ...prev]);
         }
-
-        try {
-            if (editingField) {
-                // Update existing field
-                console.log("✏️ Updating field:", editingField.$id);
-
-                await databases.updateDocument(
-                    DATABASE_ID,
-                    COLLECTION_ID,
-                    editingField.$id,
-                    {
-                        name: formData.name,
-                        size: `${formData.size} Acres`,
-                        crop: formData.crop,
-                        moisture: formData.moisture,
-                        ph: formData.ph,
-                        nitrogen: formData.nitrogen,
-                        phosphorus: formData.phosphorus,
-                        potassium: formData.potassium,
-                        status: formData.status,
-                    }
-                );
-
-                console.log("✅ Field updated");
-
-                setFields((prevFields) =>
-                    prevFields.map((field) =>
-                        field.$id === editingField.$id
-                            ? {
-                                ...field,
-                                name: formData.name,
-                                size: `${formData.size} Acres`,
-                                crop: formData.crop,
-                                moisture: formData.moisture,
-                                ph: formData.ph,
-                                nitrogen: formData.nitrogen,
-                                phosphorus: formData.phosphorus,
-                                potassium: formData.potassium,
-                                status: formData.status,
-                            }
-                            : field
-                    )
-                );
-                setEditingField(null);
-            } else {
-                // Add new field
-                console.log("📤 Creating new field with userId:", userId);
-
-                const newFieldData = {
-                    name: formData.name,
-                    size: `${formData.size} Acres`,
-                    crop: formData.crop,
-                    moisture: formData.moisture,
-                    ph: formData.ph,
-                    nitrogen: formData.nitrogen,
-                    phosphorus: formData.phosphorus,
-                    potassium: formData.potassium,
-                    status: formData.status,
-                    userId: userId, // 🔥 Link field to user
-                };
-
-                const response = await databases.createDocument(
-                    DATABASE_ID,
-                    COLLECTION_ID,
-                    "unique()",
-                    newFieldData
-                );
-
-                console.log("✅ Field created:", response.$id);
-
-                setFields((prevFields) => [response, ...prevFields]);
-            }
-            setIsFormModalOpen(false);
-        } catch (err) {
-            console.error("Error saving field:", err.message);
-            setError(`Failed to save field: ${err.message}`);
-        }
+        setIsFormOpen(false);
     }, [editingField, userId]);
 
-    const handleEditField = useCallback((field) => {
+    const handleEdit = useCallback((field) => {
         setEditingField(field);
-        setIsFormModalOpen(true);
+        setIsFormOpen(true);
     }, []);
 
-    const handleAddNewField = useCallback(() => {
+    const handleAddNew = useCallback(() => {
         setEditingField(null);
-        setIsFormModalOpen(true);
+        setIsFormOpen(true);
     }, []);
 
-    const filteredFields = fields.filter(
-        (field) =>
-            field.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            field.crop.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredFields = filterFields(fields, searchTerm);
 
+    // Loading
     if (loading) {
         return (
-            <div className="min-h-screen bg-[#f0fdf4] dark:bg-black pt-32 px-4 flex items-center justify-center">
+            <div className="min-h-screen bg-[#f0fdf4] dark:bg-black pt-32 flex items-center justify-center">
                 <div className="text-center">
-                    <div className="inline-flex p-6 bg-green-100 dark:bg-green-900/20 rounded-full mb-4">
-                        <MapIcon size={48} className="text-green-600 dark:text-green-400 animate-spin" />
+                    <div className="inline-flex p-5 bg-green-100 dark:bg-green-900/20 rounded-full mb-4">
+                        <Loader2 size={36} className="text-green-600 dark:text-green-400 animate-spin" />
                     </div>
-                    <p className="text-green-600 dark:text-green-400 font-bold text-xl">Loading Fields...</p>
+                    <p className="text-green-700 dark:text-green-400 font-semibold">Loading fields…</p>
                 </div>
             </div>
         );
@@ -860,70 +542,78 @@ function Fields() {
     return (
         <div className="min-h-screen bg-[#f0fdf4] dark:bg-black pt-28 px-4 pb-20">
             <div className="max-w-6xl mx-auto">
-                {/* Header Section */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+
+                {/* Header */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-                            <MapIcon className="text-green-600" /> My Fields
+                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-2.5">
+                            <MapIcon className="text-green-600" size={28} />
+                            My Fields
                         </h1>
-                        <p className="text-gray-600 dark:text-gray-400 mt-1">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                             Manage and monitor your land performance
                         </p>
                     </div>
-
                     <button
-                        onClick={handleAddNewField}
-                        className="flex items-center justify-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-2xl shadow-lg shadow-green-200 dark:shadow-none transition-all active:scale-95"
+                        onClick={handleAddNew}
+                        className="inline-flex items-center gap-2 px-5 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-2xl shadow-md shadow-green-200 dark:shadow-none transition-all active:scale-95 text-sm"
                     >
-                        <Plus size={20} />
+                        <Plus size={18} />
                         Add New Field
                     </button>
                 </div>
 
-                {/* Error Message */}
+                {/* Error */}
                 {error && (
-                    <div className="mb-8 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl">
-                        <p className="text-red-600 dark:text-red-400 font-semibold">{error}</p>
-                        <button
-                            onClick={() => setError(null)}
-                            className="text-red-600 dark:text-red-400 text-sm underline mt-2 hover:no-underline"
-                        >
-                            Dismiss
+                    <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl flex items-start justify-between gap-4">
+                        <p className="text-red-600 dark:text-red-400 font-semibold text-sm">{error}</p>
+                        <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600 flex-shrink-0">
+                            <X size={16} />
                         </button>
                     </div>
                 )}
 
-                {/* Search Bar */}
-                <div className="relative mb-8">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                {/* Search */}
+                <div className="relative mb-7">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                     <input
                         type="text"
-                        placeholder="Search by name or crop..."
+                        placeholder="Search by field name or crop…"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-12 pr-4 py-4 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl shadow-sm focus:ring-2 focus:ring-green-500 outline-none dark:text-white"
+                        className="w-full pl-11 pr-4 py-3.5 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl shadow-sm focus:ring-2 focus:ring-green-500 outline-none dark:text-white text-sm"
                     />
+                    {searchTerm && (
+                        <button
+                            onClick={() => setSearchTerm("")}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                            <X size={16} />
+                        </button>
+                    )}
                 </div>
 
-                {/* Fields Grid */}
+                {/* Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredFields.map((field) => (
                         <FieldCard
                             key={field.$id}
                             field={field}
                             onViewDetails={setSelectedField}
-                            onEdit={handleEditField}
-                            onDelete={(fieldId) => handleDeleteClick(fieldId, field.name)}
+                            onEdit={handleEdit}
+                            onDelete={(id) => handleDeleteClick(id, field.name)}
                         />
                     ))}
 
                     {filteredFields.length === 0 && (
-                        <div className="col-span-full py-20 text-center">
-                            <div className="inline-flex p-6 bg-gray-100 dark:bg-gray-900 rounded-full mb-4">
-                                <MapIcon size={48} className="text-gray-400" />
+                        <div className="col-span-full py-24 text-center">
+                            <div className="inline-flex p-5 bg-gray-100 dark:bg-gray-900 rounded-full mb-4">
+                                <MapIcon size={40} className="text-gray-400" />
                             </div>
-                            <p className="text-gray-500 dark:text-gray-400 text-lg">
-                                {searchTerm ? "No fields found matching your search." : "No fields yet. Create one to get started!"}
+                            <p className="text-gray-500 dark:text-gray-400">
+                                {searchTerm
+                                    ? "No fields match your search."
+                                    : "No fields yet. Add one to get started!"}
                             </p>
                         </div>
                     )}
@@ -931,14 +621,15 @@ function Fields() {
             </div>
 
             {/* Modals */}
-            <FieldModal field={selectedField} isOpen={!!selectedField} onClose={() => setSelectedField(null)} />
+            <FieldModal
+                field={selectedField}
+                isOpen={!!selectedField}
+                onClose={() => setSelectedField(null)}
+            />
             <FormFieldModal
-                isOpen={isFormModalOpen}
-                onClose={() => {
-                    setIsFormModalOpen(false);
-                    setEditingField(null);
-                }}
-                onSubmit={handleAddField}
+                isOpen={isFormOpen}
+                onClose={() => { setIsFormOpen(false); setEditingField(null); }}
+                onSubmit={handleSaveField}
                 initialData={editingField}
                 isEditMode={!!editingField}
             />

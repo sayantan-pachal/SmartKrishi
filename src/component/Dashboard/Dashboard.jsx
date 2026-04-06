@@ -1,23 +1,11 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useState } from "react";
-import {
-  Leaf,
-  CloudRain,
-  Bug,
-  Map,
-  TrendingUp,
-  Calendar,
-  AlertCircle,
-  CheckCircle,
-  Clock,
-  Droplets,
-  Thermometer,
-  Loader2,
-  BarChart3,
-} from "lucide-react";
+import { Leaf, CloudRain, Bug, Map, TrendingUp, Calendar, AlertCircle, CheckCircle, Clock, Droplets, Thermometer, Loader2, BarChart3 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { account, databases, DATABASE_ID, CROPS_COLLECTION_ID } from "../../appwrite/config";
 import { Query } from "appwrite";
+import { CROP_SEASONS, DASHBOARD_CARDS } from "../../data/DashboardData";
+
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -35,21 +23,7 @@ function Dashboard() {
   });
 
   // Crop data with seasons and health parameters
-  const cropSeasons = {
-    wheat: { season: "Rabi", daysToMaturity: 120, harvestMonth: "April" },
-    rice: { season: "Kharif", daysToMaturity: 150, harvestMonth: "September" },
-    corn: { season: "Kharif", daysToMaturity: 90, harvestMonth: "August" },
-    "basmati rice": { season: "Kharif", daysToMaturity: 150, harvestMonth: "September" },
-    sugarcane: { season: "Kharif", daysToMaturity: 360, harvestMonth: "December" },
-    cotton: { season: "Kharif", daysToMaturity: 210, harvestMonth: "October" },
-    potato: { season: "Rabi", daysToMaturity: 120, harvestMonth: "March" },
-    tomato: { season: "Summer", daysToMaturity: 70, harvestMonth: "June" },
-    onion: { season: "Rabi", daysToMaturity: 150, harvestMonth: "April" },
-    cabbage: { season: "Rabi", daysToMaturity: 120, harvestMonth: "March" },
-    carrot: { season: "Rabi", daysToMaturity: 100, harvestMonth: "March" },
-    groundnut: { season: "Kharif", daysToMaturity: 120, harvestMonth: "August" },
-    soybean: { season: "Kharif", daysToMaturity: 100, harvestMonth: "August" },
-  };
+  const cropSeasons = CROP_SEASONS;
 
   const currentMonth = new Date().getMonth() + 1;
   const currentSeason = currentMonth >= 6 && currentMonth <= 9 ? "Kharif" : currentMonth >= 10 && currentMonth <= 3 ? "Rabi" : "Summer";
@@ -77,7 +51,7 @@ function Dashboard() {
 
         // Get current user
         const currentUser = await account.get();
-        
+
         // Fetch all crops for this user
         const response = await databases.listDocuments(
           DATABASE_ID,
@@ -115,9 +89,9 @@ function Dashboard() {
         cropsList.forEach((crop) => {
           // ✅ FIX: Use healthScore instead of health
           const health = parseInt(crop.healthScore) || 0;
-          
+
           console.log(`Crop: ${crop.name}, Health: ${health}`);
-          
+
           // Only count crops with valid health scores
           if (health > 0) {
             totalHealth += health;
@@ -219,36 +193,7 @@ function Dashboard() {
     });
   };
 
-  const cards = [
-    {
-      title: "My Fields",
-      desc: "Manage and monitor all your farm fields",
-      icon: Map,
-      link: "/fields",
-      color: "from-green-500 to-emerald-600",
-    },
-    {
-      title: "My Crops",
-      desc: "Track your seasonal crops and harvests",
-      icon: Leaf,
-      link: "/crops",
-      color: "from-lime-500 to-green-600",
-    },
-    {
-      title: "Weather Insights",
-      desc: "Real-time weather updates for your area",
-      icon: CloudRain,
-      link: "/advisory",
-      color: "from-sky-500 to-blue-600",
-    },
-    {
-      title: "Disease Detection",
-      desc: "Identify crop diseases using AI",
-      icon: Bug,
-      link: "/disease-detection",
-      color: "from-rose-500 to-red-600",
-    },
-  ];
+  const cards = DASHBOARD_CARDS;
 
   if (loading) {
     return (
@@ -336,13 +281,12 @@ function Dashboard() {
           </div>
           <div className="w-full h-4 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
             <div
-              className={`h-full rounded-full transition-all duration-500 ${
-                cropStats.averageHealth >= 80
+              className={`h-full rounded-full transition-all duration-500 ${cropStats.averageHealth >= 80
                   ? "bg-gradient-to-r from-green-500 to-emerald-600"
                   : cropStats.averageHealth >= 60
-                  ? "bg-gradient-to-r from-yellow-500 to-orange-600"
-                  : "bg-gradient-to-r from-red-500 to-rose-600"
-              }`}
+                    ? "bg-gradient-to-r from-yellow-500 to-orange-600"
+                    : "bg-gradient-to-r from-red-500 to-rose-600"
+                }`}
               style={{ width: `${cropStats.averageHealth}%` }}
             />
           </div>
@@ -350,10 +294,10 @@ function Dashboard() {
             {cropStats.averageHealth >= 80
               ? "✅ Excellent condition - Keep up with regular monitoring"
               : cropStats.averageHealth >= 60
-              ? "⚠️ Good health - Watch for potential issues"
-              : cropStats.averageHealth > 0
-              ? "🔴 Needs attention - Review crops for problems"
-              : "No crops to analyze"}
+                ? "⚠️ Good health - Watch for potential issues"
+                : cropStats.averageHealth > 0
+                  ? "🔴 Needs attention - Review crops for problems"
+                  : "No crops to analyze"}
           </p>
         </div>
 
@@ -424,8 +368,8 @@ function Dashboard() {
                 {currentSeason === "Kharif"
                   ? "Monsoon season - Good for rice, cotton, sugarcane"
                   : currentSeason === "Rabi"
-                  ? "Winter season - Good for wheat, potato, onion"
-                  : "Summer season - Good for vegetables"}
+                    ? "Winter season - Good for wheat, potato, onion"
+                    : "Summer season - Good for vegetables"}
               </p>
             </div>
           </div>

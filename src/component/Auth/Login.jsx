@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Mail, Lock, ArrowRight, Eye, EyeOff, Loader2 } from "lucide-react";
-import { account } from "../../appwrite/config"; // Ensure this path is correct
+import { Mail, Lock, ArrowRight, Eye, EyeOff, Loader2, Leaf } from "lucide-react";
+import { account } from "../../appwrite/config";
+import TextLogo from "./../../../public/text_logo";
 
 function Login() {
   const navigate = useNavigate();
@@ -19,7 +20,7 @@ function Login() {
     try {
       // ✅ Appwrite Authentication
       await account.createEmailPasswordSession(email, password);
-      
+
       // Redirect to dashboard/home on success
       navigate("/dashboard", { replace: true });
     } catch (error) {
@@ -44,11 +45,10 @@ function Login() {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-[linear-gradient(180deg,#f0fdf4,#dcfce7)] dark:bg-[linear-gradient(0deg,#111827,#000000)]">
+    <div className="min-h-screen flex items-center justify-center px-4 bg-smartkrishi-light dark:bg-smartkrishi-dark">
       <div className="w-full max-w-md p-8 rounded-xl bg-white/70 dark:bg-gray-900/70 backdrop-blur shadow-lg border border-white/20 dark:border-gray-800">
-        
         <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-white">
-          Welcome to SmartKrishi 🌾
+          Welcome to <TextLogo />
         </h1>
 
         <p className="mt-2 text-center text-gray-600 dark:text-gray-400">

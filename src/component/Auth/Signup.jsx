@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { User, Mail, Lock, ArrowRight, Eye, EyeOff, Loader2 } from "lucide-react";
-import { account, ID } from "../../appwrite/config"; // Ensure ID is exported from config
+import { account, ID } from "../../appwrite/config";
+import TextLogo from "./../../../public/text_logo";
 
 function Signup() {
     const navigate = useNavigate();
@@ -39,9 +40,9 @@ function Signup() {
             // 1️⃣ Create the User Account in Appwrite
             // Appwrite handles hashing automatically
             await account.create(
-                ID.unique(), 
-                email, 
-                password, 
+                ID.unique(),
+                email,
+                password,
                 name
             );
 
@@ -59,10 +60,10 @@ function Signup() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center px-4 mt-10 bg-[linear-gradient(180deg,#f0fdf4,#dcfce7)] dark:bg-[linear-gradient(0deg,#111827,#000000)]">
+        <div className="min-h-screen flex items-center justify-center px-4 mt-10 bg-smartkrishi-light dark:bg-smartkrishi-dark">
             <div className="w-full max-w-md p-8 rounded-xl bg-white/70 dark:bg-gray-900/70 backdrop-blur shadow-lg border border-white/20 dark:border-gray-800">
                 <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-white">
-                    Join SmartKrishi 🌾
+                    Join <TextLogo />
                 </h1>
 
                 <p className="mt-2 text-center text-gray-600 dark:text-gray-400">

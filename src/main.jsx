@@ -19,20 +19,24 @@ import Edgecase from './component/Other/Edgecase.jsx'
 
 const router = createBrowserRouter(
   createRoutesFromElements(
-    <Route path='/' element={<Layout />}>
+    <Route path='/'>
+      {/* Standalone Route: Home loads WITHOUT the Layout (No Header/Footer) */}
       <Route path='' element={<Home />} />
+      {/* Authentication Routes: Usually also standalone (No Header/Footer) */}
       <Route path="login" element={<Login />} />
       <Route path="signup" element={<Signup />} />
       <Route path="forgot-password" element={<ForgotPassword />} />
       <Route path="reset-password" element={<ResetPassword />} />
-      {/* Protected Routes */}
-      <Route path='dashboard' element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-      <Route path='fields' element={<ProtectedRoute><Fields /></ProtectedRoute>} />
-      <Route path='crops' element={<ProtectedRoute><Crops /></ProtectedRoute>} />
-      <Route path='advisory' element={<ProtectedRoute><Advisory /></ProtectedRoute>} />
-      <Route path='profile' element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-      <Route path='settings' element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-      {/* 404  */}
+      {/* Protected Routes: Wrapped INSIDE the Layout (Header + Outlet + Footer) */}
+      <Route element={<Layout />}>
+        <Route path='dashboard' element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path='fields' element={<ProtectedRoute><Fields /></ProtectedRoute>} />
+        <Route path='crops' element={<ProtectedRoute><Crops /></ProtectedRoute>} />
+        <Route path='advisory' element={<ProtectedRoute><Advisory /></ProtectedRoute>} />
+        <Route path='profile' element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        <Route path='settings' element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+      </Route>
+      {/* 404 */}
       <Route path='*' element={<Edgecase />} />
     </Route>
   )

@@ -3,8 +3,8 @@ import { useState, useEffect, useRef } from "react";
 import ThemeToggle from "./ThemeToggle";
 import { Menu, X, UserRound } from 'lucide-react';
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import Logo from "./Logo";
-import { account } from "../../appwrite/config"; // Ensure the path is correct
+import { account } from "../../appwrite/config"; // Import Appwrite account for session management
+import Logo from "./../../../public/Logo";
 
 const navLinks = [
     { label: "Dashboard", to: "/dashboard" },
@@ -68,7 +68,7 @@ export default function Header() {
         <nav className="bg-[linear-gradient(180deg,#f0fdf4,#dcfce7)] dark:bg-[linear-gradient(180deg,#020617,#020617)] dark:border-gray-700 fixed top-0 z-50 w-full border-b ">
             <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
                 {/* Logo */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center">
                     <Logo />
                 </div>
 
