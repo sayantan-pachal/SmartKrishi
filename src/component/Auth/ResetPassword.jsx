@@ -2,10 +2,12 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Lock, Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
-import { account } from "../../appwrite/config"; // Ensure this is imported
+import { account } from "../../appwrite/config";
+import { useToast } from "../../component/Other/ToastContext";
 
 function ResetPassword() {
   const navigate = useNavigate();
+  const showToast = useToast();
 
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -31,12 +33,12 @@ function ResetPassword() {
     e.preventDefault();
 
     if (!oldPassword || !newPassword) {
-      alert("All fields are required");
+      showToast("All fields are required ⚠️", "error");
       return;
     }
 
     if (newPassword.length < 8) {
-      alert("New password must be at least 8 characters long");
+      showToast("New password must be at least 8 characters long ⚠️", "error");
       return;
     }
 
@@ -47,19 +49,19 @@ function ResetPassword() {
       // and the hashing of newPassword automatically.
       await account.updatePassword(newPassword, oldPassword);
 
-      alert("Password updated successfully 🔐");
-      navigate("/", { replace: true });
+      showToast("Password updated successfully 🔐", "success");
+      navigate("/dashboard", { replace: true });
     } catch (error) {
       console.error("Password Update Error:", error);
       // Appwrite will throw an error if the old password doesn't match
-      alert(error.message || "Failed to update password. Check your old password.");
+      showToast("Failed to update password. Check your old password.", "error");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-smartkrishi-light dark:bg-smartkrishi-dark">
+    <div className="min-h-screen flex items-center justify-center px-4 relative h-screen bg-auth-bg1 dark:bg-auth-bg2 bg-cover bg-center bg-no-repeat">
       <div className="w-full max-w-md p-8 rounded-xl bg-white/70 dark:bg-gray-900/70 backdrop-blur-sm shadow-lg border border-white/20 dark:border-gray-800">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white text-center">
           Reset Password 🔐

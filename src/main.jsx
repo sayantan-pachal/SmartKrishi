@@ -6,7 +6,7 @@ import Layout from './Layout.jsx'
 import Home from './component/Home/Home.jsx'
 import Login from './component/Auth/Login.jsx'
 import Signup from './component/Auth/Signup.jsx'
-import ForgotPassword from './component/Auth/ForgotPassword.jsx'
+import ForgetPassword from './component/Auth/ForgetPassword.jsx'
 import Dashboard from './component/Dashboard/Dashboard.jsx'
 import ResetPassword from './component/Auth/ResetPassword.jsx'
 import ProtectedRoute from './ProtectedRoute.jsx'
@@ -16,6 +16,7 @@ import Fields from './component/Fields/Fields.jsx'
 import Crops from './component/Crops/Crops.jsx'
 import Advisory from './component/Advisory/Advisory.jsx'
 import Edgecase from './component/Other/Edgecase.jsx'
+import { ToastProvider } from "./component/Other/ToastContext.jsx";
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -25,7 +26,7 @@ const router = createBrowserRouter(
       {/* Authentication Routes: Usually also standalone (No Header/Footer) */}
       <Route path="login" element={<Login />} />
       <Route path="signup" element={<Signup />} />
-      <Route path="forgot-password" element={<ForgotPassword />} />
+      <Route path="forget-password" element={<ForgetPassword />} />
       <Route path="reset-password" element={<ResetPassword />} />
       {/* Protected Routes: Wrapped INSIDE the Layout (Header + Outlet + Footer) */}
       <Route element={<Layout />}>
@@ -44,6 +45,8 @@ const router = createBrowserRouter(
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
+    <ToastProvider>
       <RouterProvider router={router} />
+    </ToastProvider>
   </React.StrictMode>,
 )

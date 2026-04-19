@@ -34,7 +34,7 @@ const Home = () => {
           <a href="#features" className="text-gray-500 hover:text-smart-green-600 transition">Features</a>
           <a href="#about" className="text-gray-500 hover:text-smart-green-600 transition">About</a>
           <Link to="/login" className="hover:text-smart-green-600 transition">Sign In</Link>
-          <Link to="/signup" className="bg-smart-green-600 text-white px-6 py-2 rounded-full font-bold hover:bg-smart-green-700 transition transform hover:-translate-y-px">
+          <Link to="/signup" className="bg-smart-green-600 flex text-white px-6 py-2 rounded-full font-bold hover:bg-smart-green-700 transition transform hover:-translate-y-px">
             Get Started
           </Link>
         </div>
@@ -45,8 +45,8 @@ const Home = () => {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(59,109,17,0.08),transparent_70%)] pointer-events-none" />
         <div className="relative z-10 max-w-5xl mx-auto">
           <div className="inline-flex items-center gap-2 bg-smart-green-50 dark:bg-smart-green-800/20 text-smart-green-700 dark:text-smart-green-100 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest border border-smart-green-100 dark:border-smart-green-700/30 mb-8">
-             <span className="w-2 h-2 rounded-full bg-smart-green-600 animate-pulse" />
-             Now Live · AI-Powered Agriculture
+              <span className="w-2 h-2 rounded-full bg-smart-green-600 animate-pulse" />
+              Now Live · AI-Powered Agriculture
           </div>
           <h1 className="font-fraunces font-black text-5xl md:text-8xl tracking-tighter leading-[1.05] mb-6">
             {hero.title} <br />

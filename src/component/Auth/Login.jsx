@@ -3,9 +3,11 @@ import { Link, useNavigate } from "react-router-dom";
 import { Mail, Lock, ArrowRight, Eye, EyeOff, Loader2, Leaf } from "lucide-react";
 import { account } from "../../appwrite/config";
 import TextLogo from "./../../../public/text_logo";
+import { useToast } from "../../component/Other/ToastContext";
 
 function Login() {
   const navigate = useNavigate();
+  const showToast = useToast();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -20,12 +22,12 @@ function Login() {
     try {
       // ✅ Appwrite Authentication
       await account.createEmailPasswordSession(email, password);
-
+      showToast("Login successful! Welcome back 🌱", "success");
       // Redirect to dashboard/home on success
       navigate("/dashboard", { replace: true });
     } catch (error) {
       console.error("Login Error:", error);
-      alert(error.message || "Invalid email or password. Please try again.");
+      showToast("Invalid email or password. Please try again.", "error");
     } finally {
       setLoading(false);
     }
@@ -45,7 +47,7 @@ function Login() {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-smartkrishi-light dark:bg-smartkrishi-dark">
+    <div className="min-h-screen flex items-center justify-center px-4 relative h-screen bg-auth-bg1 dark:bg-auth-bg2 bg-cover bg-center bg-no-repeat" >
       <div className="w-full max-w-md p-8 rounded-xl bg-white/70 dark:bg-gray-900/70 backdrop-blur shadow-lg border border-white/20 dark:border-gray-800">
         <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-white">
           Welcome to <TextLogo />
@@ -73,9 +75,21 @@ function Login() {
           </div>
 
           {/* Password */}
-          <div>
-            <label className="block text-sm font-medium dark:text-gray-300">Password</label>
-            <div className="relative mt-1">
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Password
+              </label>
+              {/* Moved inside the flex container to push it to the right */}
+              <Link
+                to="/forgot-password"
+                className="text-xs font-medium text-green-600 hover:text-green-500 hover:underline transition-colors"
+              >
+                Forgot password?
+              </Link>
+            </div>
+
+            <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type={showPassword ? "text" : "password"}

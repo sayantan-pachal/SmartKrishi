@@ -5,6 +5,8 @@ import { Menu, X, UserRound } from 'lucide-react';
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { account } from "../../appwrite/config"; // Import Appwrite account for session management
 import Logo from "./../../../public/Logo";
+import { useToast } from "../Other/ToastContext";
+
 
 const navLinks = [
     { label: "Dashboard", to: "/dashboard" },
@@ -17,6 +19,7 @@ export default function Header() {
     const [menuOpen, setMenuOpen] = useState(false);
     const [userOpen, setUserOpen] = useState(false);
     const dropdownRef = useRef(null); // ✅ Create a reference for the dropdown
+    const showToast = useToast();
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -58,9 +61,11 @@ export default function Header() {
             await account.deleteSession("current");
             setUser(null);
             setUserOpen(false);
+            showToast("Logged out successfully. See you soon! 👋", "success");
             navigate("/login", { replace: true });
         } catch (error) {
             console.error("Logout failed:", error);
+            showToast("Failed to logout. Please try again.", "error");
         }
     };
 

@@ -3,9 +3,11 @@ import { Link, useNavigate } from "react-router-dom";
 import { User, Mail, Lock, ArrowRight, Eye, EyeOff, Loader2 } from "lucide-react";
 import { account, ID } from "../../appwrite/config";
 import TextLogo from "./../../../public/text_logo";
+import { useToast } from "../../component/Other/ToastContext";
 
 function Signup() {
     const navigate = useNavigate();
+    const showToast = useToast();
 
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
@@ -18,7 +20,7 @@ function Signup() {
         const checkSession = async () => {
             try {
                 await account.get();
-                navigate("/", { replace: true });
+                navigate("/dashboard", { replace: true });
             } catch {
                 // No session, user stays on signup
             }
@@ -30,37 +32,31 @@ function Signup() {
         e.preventDefault();
 
         if (!name || !email || !password) {
-            alert("All fields are required");
+            showToast("All fields are required ⚠️", "error");
             return;
         }
-
         setLoading(true);
-
         try {
             // 1️⃣ Create the User Account in Appwrite
             // Appwrite handles hashing automatically
-            await account.create(
-                ID.unique(),
-                email,
-                password,
-                name
-            );
+            await account.create( ID.unique(), email, password, name );
 
             // 2️⃣ Automatically log the user in after successful signup
             await account.createEmailPasswordSession(email, password);
 
-            // 3️⃣ Navigate to dashboard/home
-            navigate("/", { replace: true });
+            showToast(`Welcome to the farm, ${name}!`, "success");
+            // 3️⃣ Navigate to dashboard
+            navigate("/dashboard", { replace: true });
         } catch (error) {
             console.error("Signup Error:", error);
-            alert(error.message || "Signup failed. Please try again.");
+            showToast("Signup failed. Please try again.", "error");
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center px-4 mt-10 bg-smartkrishi-light dark:bg-smartkrishi-dark">
+        <div className="min-h-screen flex items-center justify-center px-4 relative h-screen bg-auth-bg1 dark:bg-auth-bg2 bg-cover bg-center bg-no-repeat">
             <div className="w-full max-w-md p-8 rounded-xl bg-white/70 dark:bg-gray-900/70 backdrop-blur shadow-lg border border-white/20 dark:border-gray-800">
                 <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-white">
                     Join <TextLogo />

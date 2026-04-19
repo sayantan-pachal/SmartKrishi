@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 import React, { useEffect, useState } from 'react';
-import { User, Mail, MapPin, Calendar, Phone, ShieldCheck, Loader2, X } from 'lucide-react';
+import { User, Tractor, Mail, MapPin, Calendar, Phone, ShieldCheck, Loader2, X } from 'lucide-react';
 import { account } from "../../appwrite/config";
 import { useNavigate } from 'react-router-dom';
 
@@ -228,8 +228,9 @@ function Profile() {
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
                 {user?.name || "Farmer"}
               </h1>
-              <p className="text-green-600 dark:text-green-400 font-medium">
-                Verified SmartKrishi Farmer 🌾
+              <p className="text-green-600 dark:text-green-400 font-medium flex items-center">
+                Verified SmartKrishi Farmer 
+                <Tractor className="w-5 h-5 ml-2" />
               </p>
             </div>
           </div>

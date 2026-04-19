@@ -2,11 +2,13 @@ import React, { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, ArrowRight, Loader2, CheckCircle } from "lucide-react";
 import { account } from "../../appwrite/config"; // Ensure this is imported
+import { useToast } from "../Other/ToastContext";
 
 function ForgetPassword() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  
+  const showToast = useToast();
+
   // Appwrite sends 'userId' and 'secret' in the URL when the user clicks the email link
   const userId = searchParams.get("userId");
   const secret = searchParams.get("secret");
@@ -25,8 +27,10 @@ function ForgetPassword() {
       // Replace 'http://localhost:5173/forget-password' with your actual hosted reset URL
       await account.createRecovery(email, "http://localhost:5173/forget-password");
       setEmailSent(true);
+      showToast("Recovery email sent! Please check your inbox 📧", "success");
     } catch (error) {
-      alert(error.message || "Failed to send recovery email.");
+      console.error("Recovery Error:", error);
+      showToast("Failed to send recovery email.", "error");
     } finally {
       setLoading(false);
     }
@@ -36,24 +40,25 @@ function ForgetPassword() {
   const handleResetPassword = async (e) => {
     e.preventDefault();
     if (newPassword.length < 8) {
-      alert("Password must be at least 8 characters");
+      showToast("Password must be at least 8 characters 🔑", "error");
       return;
     }
 
     setLoading(true);
     try {
       await account.updateRecovery(userId, secret, newPassword, newPassword);
-      alert("Password reset successful! 🌾🔐");
+      showToast("Password reset successful!🔐", "success");
       navigate("/login", { replace: true });
     } catch (error) {
-      alert(error.message || "Invalid or expired recovery link.");
+      console.error("Reset Password Error:", error);
+      showToast(error.message || "Invalid or expired recovery link.", "error");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-smartkrishi-light dark:bg-smartkrishi-dark">
+    <div className="min-h-screen flex items-center justify-center px-4 relative h-screen bg-auth-bg1 dark:bg-auth-bg2 bg-cover bg-center bg-no-repeat">
       <div className="w-full max-w-md p-8 rounded-xl bg-white/70 dark:bg-gray-900/70 backdrop-blur shadow-lg border border-white/20 dark:border-gray-800">
         <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-white">
           {userId && secret ? "New Password 🔑" : "Reset Password 🔑"}
