@@ -5,8 +5,8 @@ export default {
   theme: {
     extend: {
       backgroundImage: {
-        "smartkrishi-light": "linear-gradient(180deg, #f8f7f4, #EAF3DE)",
-        "smartkrishi-dark": "linear-gradient(0deg, #050a02, #000000)",
+        "smartkrishi-light": "linear-gradient(180deg, #f3fbef 0%, #d9efc9 100%)",
+        "smartkrishi-dark": "linear-gradient(180deg, #0f1f0d 0%, #050a04 100%)",
         'auth-bg1': "url('/bg_images/image2.png')",
         'auth-bg2': "url('/bg_images/image.png')",
         'profile': "url('/image.png')",

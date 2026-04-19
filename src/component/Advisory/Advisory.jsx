@@ -25,7 +25,7 @@ const Advisory = () => {
   if (loading) return <WeatherLoading />;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-blue-50 dark:from-black dark:to-gray-900 pt-28 px-4 pb-20">
+    <div className="min-h-screen bg-smartkrishi-light dark:bg-smartkrishi-dark pt-28 px-4 pb-20">
       <div className="max-w-4xl mx-auto">
 
         <div className="mb-8">

@@ -203,7 +203,7 @@ function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f0fdf4] dark:bg-black pt-28 px-4 pb-12">
+    <div className="min-h-screen bg-smartkrishi-light dark:bg-smartkrishi-dark pt-28 px-4 pb-12">
       <div className="max-w-3xl mx-auto">
         
         {/* Profile Header Card */}
