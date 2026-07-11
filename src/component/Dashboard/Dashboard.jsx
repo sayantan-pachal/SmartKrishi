@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { Leaf, Tractor, AlertCircle, CheckCircle, Clock, BarChart3, Calendar, Loader2, Sprout, LeafyGreen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { account, databases, DATABASE_ID, CROPS_COLLECTION_ID } from "../../appwrite/config";
-import { Query } from "appwrite";
 import { CROP_SEASONS, DASHBOARD_CARDS, SEASON_META } from "../../data/DashboardData";
 
 import {
@@ -65,11 +64,10 @@ const fetchAndComputeStats = async (cropSeasons) => {
     return JSON.parse(cached);
   }
 
-  const currentUser = await account.get();
-  const response = await databases.listDocuments(
-    DATABASE_ID, CROPS_COLLECTION_ID,
-    [Query.equal("userId", currentUser.$id)]
-  );
+// eslint-disable-next-line no-unused-vars
+const currentUser = await account.get();
+// Our custom Google Sheets wrapper handles the userId filtering automatically!
+const response = await databases.listDocuments(DATABASE_ID, CROPS_COLLECTION_ID);
 
   const cropsList = response.documents || [];
   let totalHealth = 0, validHealthCount = 0, healthyCount = 0;

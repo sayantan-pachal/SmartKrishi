@@ -30,26 +30,26 @@ function Signup() {
 
     const handleSignup = async (e) => {
         e.preventDefault();
-
         if (!name || !email || !password) {
             showToast("All fields are required ⚠️", "error");
             return;
         }
         setLoading(true);
         try {
-            // 1️⃣ Create the User Account in Appwrite
-            // Appwrite handles hashing automatically
-            await account.create( ID.unique(), email, password, name );
-
-            // 2️⃣ Automatically log the user in after successful signup
-            await account.createEmailPasswordSession(email, password);
-
+            // 1️⃣ Generate a clean unique string identifier
+            const generatedId = ID.unique();
+            
+            // 2️⃣ Appends user row to your Google Sheet 'users' tab
+            const newUser = await account.create(generatedId, email, password, name);
+            
+            // 3️⃣ Skip the fetch! Instantly log them in locally so Google Sheets has time to save.
+            localStorage.setItem("smartkrishi_user", JSON.stringify(newUser));
+            
             showToast(`Welcome to the farm, ${name}!`, "success");
-            // 3️⃣ Navigate to dashboard
             navigate("/dashboard", { replace: true });
         } catch (error) {
             console.error("Signup Error:", error);
-            showToast("Signup failed. Please try again.", "error");
+            showToast(error.message || "Signup failed. Please try again.", "error");
         } finally {
             setLoading(false);
         }

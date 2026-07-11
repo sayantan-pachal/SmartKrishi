@@ -17,17 +17,14 @@ function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     if (!email || !password) return;
-
     setLoading(true);
     try {
-      // ✅ Appwrite Authentication
       await account.createEmailPasswordSession(email, password);
       showToast("Login successful! Welcome back 🌱", "success");
-      // Redirect to dashboard/home on success
       navigate("/dashboard", { replace: true });
     } catch (error) {
       console.error("Login Error:", error);
-      showToast("Invalid email or password. Please try again.", "error");
+      showToast(error.message || "Invalid email or password. Please try again.", "error");
     } finally {
       setLoading(false);
     }

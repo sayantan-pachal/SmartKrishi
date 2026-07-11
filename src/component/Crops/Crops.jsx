@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Sprout, Search, Plus, X, Loader2 } from "lucide-react";
 import { databases, ID, account, DATABASE_ID, CROPS_COLLECTION_ID } from "../../appwrite/config";
-import { Query } from "appwrite";
 import { DEFAULT_CROP_FORM, DEFAULT_CROP_IMAGE } from "../../data/CropsData";
 
 import CropCard        from "./Cropcard";
@@ -21,14 +20,14 @@ export default function Crops() {
     const [editingCrop, setEditingCrop]         = useState(null);
     const [formData, setFormData]               = useState(DEFAULT_CROP_FORM);
 
-    // 🔑 Get current user
+    // 🔑 Get current user profile from localStorage system wrapper
     useEffect(() => {
         account.get()
-            .then((user) => { setUserId(user.$id); setError(null); })
+            .then((user) => { setUserId(user.userId || user.$id); setError(null); })
             .catch(() => setError("Please log in to view crops"));
     }, []);
 
-    // 📥 Fetch user's crops
+    // 📥 Fetch user's crops from Sheet
     useEffect(() => {
         if (!userId) return;
         const fetchCrops = async () => {
@@ -36,8 +35,7 @@ export default function Crops() {
                 setFetchingCrops(true);
                 const response = await databases.listDocuments(
                     DATABASE_ID,
-                    CROPS_COLLECTION_ID,
-                    [Query.equal("userId", userId)]
+                    CROPS_COLLECTION_ID
                 );
                 setCrops(response.documents);
                 setError(null);
@@ -51,7 +49,6 @@ export default function Crops() {
         fetchCrops();
     }, [userId]);
 
-    // 🔄 Form input change
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData((prev) => ({
@@ -83,6 +80,7 @@ export default function Crops() {
                         moisture: formData.moisture,
                         status: formData.status,
                         healthScore: formData.healthScore,
+                        userId
                     }
                 );
                 setCrops((prev) => prev.map((c) => (c.$id === editingCrop.$id ? updatedCrop : c)));
@@ -129,7 +127,6 @@ export default function Crops() {
         }
     };
 
-    // ✏️ Open edit modal
     const handleEditCrop = (crop) => {
         setEditingCrop(crop);
         setFormData({
@@ -144,7 +141,6 @@ export default function Crops() {
         setShowModal(true);
     };
 
-    // Close form modal
     const handleCloseForm = () => {
         setShowModal(false);
         setEditingCrop(null);
@@ -160,8 +156,6 @@ export default function Crops() {
     return (
         <div className="min-h-screen pt-28 px-4 pb-12 bg-smartkrishi-light dark:bg-smartkrishi-dark">
             <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-
-                {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
                     <div>
                         <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
@@ -181,7 +175,6 @@ export default function Crops() {
                     </button>
                 </div>
 
-                {/* Error */}
                 {error && (
                     <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-400 flex items-start justify-between">
                         <span>⚠️ {error}</span>
@@ -189,7 +182,6 @@ export default function Crops() {
                     </div>
                 )}
 
-                {/* Search */}
                 <div className="flex flex-col sm:flex-row gap-4 mb-8">
                     <div className="relative flex-1">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
@@ -203,7 +195,6 @@ export default function Crops() {
                     </div>
                 </div>
 
-                {/* Crops Grid */}
                 {fetchingCrops ? (
                     <div className="flex items-center justify-center py-12">
                         <Loader2 className="animate-spin text-green-600" size={32} />
