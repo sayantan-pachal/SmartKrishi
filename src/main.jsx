@@ -26,7 +26,7 @@ const router = createBrowserRouter(
       {/* Authentication Routes: Usually also standalone (No Header/Footer) */}
       <Route path="login" element={<Login />} />
       <Route path="signup" element={<Signup />} />
-      <Route path="forget-password" element={<ForgetPassword />} />
+      <Route path="forgot-password" element={<ForgetPassword />} />
       <Route path="reset-password" element={<ResetPassword />} />
       {/* Protected Routes: Wrapped INSIDE the Layout (Header + Outlet + Footer) */}
       <Route element={<Layout />}>
