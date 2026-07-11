@@ -16,16 +16,20 @@ const hashPassword = async (password) => {
 
 export const account = {
     // 1. Create Account (Signup)
-    create: async (userId, email, password, name) => {
+    // 1. Create Account (Signup)
+    create: async (userId, email, password, name, phone) => {
         // Hash the password BEFORE saving it to Google Sheets
         const hashedPassword = await hashPassword(password);
-        const userData = { userId, email, password: hashedPassword, name, phone: "" };
+        
+        // Pass the phone parameter into the userData object!
+        const userData = { userId, email, password: hashedPassword, name, phone };
 
         await fetch(SCRIPT_URL, {
             method: "POST",
             mode: "no-cors",
             body: JSON.stringify({
                 sheet: "users",
+                action: "create",
                 data: userData
             })
         });
@@ -95,6 +99,40 @@ export const account = {
 
         // 5. Save locally so the session doesn't drop
         localStorage.setItem("smartkrishi_user", JSON.stringify(updatedUser));
+        return true;
+    },
+
+    // 6. Reset Password Without Email (Uses Phone Verification)
+    recoverPassword: async (email, phone, newPassword) => {
+        const res = await fetch(`${SCRIPT_URL}?sheet=users`);
+        const users = await res.json();
+
+        if (users.error) throw new Error(users.error);
+
+        // Find user by matching BOTH email and phone exactly
+        const user = users.find(u => 
+            String(u.email).trim().toLowerCase() === String(email).trim().toLowerCase() && 
+            String(u.phone).trim() === String(phone).trim()
+        );
+
+        if (!user) throw new Error("No account matches this email and phone combination.");
+
+        // Hash the new password
+        const hashedNew = await hashPassword(newPassword);
+        const updatedUser = { ...user, password: hashedNew };
+
+        // Send update to Google Sheets
+        await fetch(SCRIPT_URL, {
+            method: "POST",
+            mode: "no-cors",
+            body: JSON.stringify({
+                sheet: "users",
+                action: "update",
+                id: user.userId,
+                data: updatedUser
+            })
+        });
+
         return true;
     }
 };

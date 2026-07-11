@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { User, Mail, Lock, ArrowRight, Eye, EyeOff, Loader2 } from "lucide-react";
+import { User, Mail, Lock, Phone, ArrowRight, Eye, EyeOff, Loader2 } from "lucide-react";
 import { account, ID } from "../../appwrite/config";
 import TextLogo from "./../../../public/text_logo";
 import { useToast } from "../../component/Other/ToastContext";
@@ -11,11 +11,12 @@ function Signup() {
 
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
+    const [phone, setPhone] = useState(""); // Added Phone State
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
 
-    // 🔁 Redirect if already logged in (Checking Appwrite session)
+    // 🔁 Redirect if already logged in (Checking session)
     useEffect(() => {
         const checkSession = async () => {
             try {
@@ -30,17 +31,20 @@ function Signup() {
 
     const handleSignup = async (e) => {
         e.preventDefault();
-        if (!name || !email || !password) {
+        
+        // Ensure all fields are filled, including phone
+        if (!name || !email || !phone || !password) {
             showToast("All fields are required ⚠️", "error");
             return;
         }
+        
         setLoading(true);
         try {
             // 1️⃣ Generate a clean unique string identifier
             const generatedId = ID.unique();
             
-            // 2️⃣ Appends user row to your Google Sheet 'users' tab
-            const newUser = await account.create(generatedId, email, password, name);
+            // 2️⃣ Appends user row to your Google Sheet 'users' tab (Now includes phone!)
+            const newUser = await account.create(generatedId, email, password, name, phone);
             
             // 3️⃣ Skip the fetch! Instantly log them in locally so Google Sheets has time to save.
             localStorage.setItem("smartkrishi_user", JSON.stringify(newUser));
@@ -94,6 +98,22 @@ function Signup() {
                                 placeholder="farmer@example.com"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
+                                className="w-full pl-10 pr-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-green-500 outline-none dark:text-gray-200 transition-all"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Phone */}
+                    <div>
+                        <label className="block text-sm font-medium dark:text-gray-300">Phone Number</label>
+                        <div className="relative mt-1">
+                            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                            <input
+                                type="tel"
+                                required
+                                placeholder="+91 9876543210"
+                                value={phone}
+                                onChange={(e) => setPhone(e.target.value)}
                                 className="w-full pl-10 pr-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-green-500 outline-none dark:text-gray-200 transition-all"
                             />
                         </div>
