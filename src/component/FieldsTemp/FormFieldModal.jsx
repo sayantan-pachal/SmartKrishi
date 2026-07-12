@@ -58,54 +58,55 @@ const FormFieldModal = React.memo(({ isOpen, onClose, onSubmit, initialData = nu
     if (!isOpen) return null;
 
     const inputBase =
-        "w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 outline-none dark:text-white disabled:opacity-50 transition text-sm";
+        "w-full px-4 py-4 bg-gray-50 dark:bg-white/[0.03] border border-gray-200 dark:border-white/10 rounded-2xl focus:ring-2 focus:ring-green-500 outline-none dark:text-white disabled:opacity-50 transition font-medium text-sm";
 
     return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-md">
             <div
                 ref={modalRef}
-                className="bg-white dark:bg-gray-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-200"
+                className="bg-white dark:bg-[#0a0a0a] border border-black/10 dark:border-white/10 w-full max-w-xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-300 font-dm"
             >
                 {/* Header */}
-                <div className="relative h-28 bg-gradient-to-r from-green-600 to-emerald-500 p-6 flex-shrink-0">
+                <div className="relative bg-gradient-to-r from-green-600 to-emerald-600 p-8 flex-shrink-0">
+                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_80%_at_50%_-20%,rgba(255,255,255,0.15),transparent_70%)]" />
                     <button
                         onClick={onClose}
                         disabled={isSubmitting}
-                        className="absolute top-4 right-4 p-2 bg-white/20 hover:bg-white/30 rounded-full text-white transition-colors disabled:opacity-50"
+                        className="absolute top-6 right-6 p-2 bg-black/10 hover:bg-black/20 rounded-full text-white transition-colors disabled:opacity-50"
                         aria-label="Close"
                     >
-                        <X size={18} />
+                        <X size={16} />
                     </button>
-                    <div className="mt-1">
-                        <h2 className="text-xl font-bold text-white">
+                    <div className="mt-2 relative z-10">
+                        <h2 className="font-fraunces text-3xl font-bold text-white">
                             {isEditMode ? "Edit Field" : "Add New Field"}
                         </h2>
-                        <p className="text-green-100 text-sm">
+                        <p className="text-green-100 text-xs font-bold uppercase tracking-[0.15em] mt-2">
                             {isEditMode ? "Update field details" : "Fill in your field details"}
                         </p>
                     </div>
                 </div>
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="overflow-y-auto flex-1 p-6 space-y-5">
+                <form onSubmit={handleSubmit} className="overflow-y-auto flex-1 p-8 space-y-6">
                     {errors.submit && (
-                        <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
-                            <p className="text-red-600 dark:text-red-400 text-sm font-semibold">{errors.submit}</p>
+                        <div className="p-4 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30 rounded-2xl">
+                            <p className="text-red-600 dark:text-red-400 text-sm font-bold">{errors.submit}</p>
                         </div>
                     )}
 
                     {FORM_FIELD_GROUPS.map((group, gi) => (
-                        <div key={gi}>
+                        <div key={gi} className="mb-6">
                             {group.heading && (
-                                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
+                                <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-[0.18em] mb-4">
                                     {group.heading}
                                 </h3>
                             )}
-                            <div className={`grid gap-3 ${group.fields.length === 3 ? "grid-cols-3" : group.fields.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
+                            <div className={`grid gap-4 ${group.fields.length === 3 ? "grid-cols-3" : group.fields.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
                                 {group.fields.map((f) => (
                                     <div key={f.name} className={f.colSpan === 2 ? "col-span-full" : ""}>
-                                        <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">
-                                            {f.label} {f.required && <span className="text-red-500">*</span>}
+                                        <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-2">
+                                            {f.label} {f.required && <span className="text-smart-green-500">*</span>}
                                         </label>
                                         <input
                                             type={f.type}
@@ -118,7 +119,7 @@ const FormFieldModal = React.memo(({ isOpen, onClose, onSubmit, initialData = nu
                                             className={inputBase}
                                         />
                                         {errors[f.name] && (
-                                            <p className="text-red-500 text-xs mt-1">{errors[f.name]}</p>
+                                            <p className="text-red-500 text-xs mt-1.5 font-medium">{errors[f.name]}</p>
                                         )}
                                     </div>
                                 ))}
@@ -127,9 +128,9 @@ const FormFieldModal = React.memo(({ isOpen, onClose, onSubmit, initialData = nu
                     ))}
 
                     {/* Status */}
-                    <div>
-                        <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">
-                            Status
+                    <div className="pt-2">
+                        <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-2">
+                            Field Status
                         </label>
                         <CustomDropdown
                             label="Status"
@@ -144,24 +145,24 @@ const FormFieldModal = React.memo(({ isOpen, onClose, onSubmit, initialData = nu
                     </div>
 
                     {/* Buttons */}
-                    <div className="flex gap-3 pt-2">
+                    <div className="flex gap-4 pt-6 border-t border-black/5 dark:border-white/5">
                         <button
                             type="button"
                             onClick={onClose}
                             disabled={isSubmitting}
-                            className="flex-1 py-3 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+                            className="flex-1 py-4 bg-gray-100 dark:bg-white/[0.03] text-gray-700 dark:text-gray-300 font-bold rounded-2xl hover:bg-gray-200 dark:hover:bg-white/[0.08] transition-colors disabled:opacity-50"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="flex-1 py-3 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition-colors active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                            className="flex-1 py-4 bg-smart-green-600 text-white font-bold rounded-2xl hover:bg-smart-green-700 transition-colors active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
                         >
                             {isSubmitting ? (
-                                <><Loader2 className="animate-spin" size={16} /> Processing…</>
+                                <><Loader2 className="animate-spin" size={18} /> Processing…</>
                             ) : (
-                                isEditMode ? "Update Field" : "Add Field"
+                                isEditMode ? "Update Field" : "Save New Field"
                             )}
                         </button>
                     </div>

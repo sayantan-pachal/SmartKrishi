@@ -3,6 +3,7 @@ import { Sprout, Search, Plus, X, Loader2 } from "lucide-react";
 import { databases, ID, account, DATABASE_ID, CROPS_COLLECTION_ID } from "../../appwrite/config";
 import { DEFAULT_CROP_FORM, DEFAULT_CROP_IMAGE } from "../../data/CropsData";
 
+import { PageBackground, Reveal } from "../DashTemp/DashboardComponents";
 import CropCard        from "./Cropcard";
 import CropFormModal   from "./Cropformmodal";
 import CropDeleteModal from "./Cropdeletemodal";
@@ -153,74 +154,103 @@ export default function Crops() {
             crop.variety.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    return (
-        <div className="min-h-screen pt-28 px-4 pb-12 bg-smartkrishi-light dark:bg-smartkrishi-dark">
-            <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-                            <Sprout className="text-green-600" size={32} />
-                            My Crops
-                        </h1>
-                        <p className="text-gray-600 dark:text-gray-400 mt-1">
-                            Manage and monitor your farm's active seasonal crops.
-                        </p>
+    if (fetchingCrops && crops.length === 0) {
+        return (
+            <div className="min-h-screen bg-[#f5f4f0] dark:bg-[#0a0a0a] font-dm flex items-center justify-center pt-28">
+                <div className="text-center">
+                    <div className="inline-flex p-6 bg-smart-green-50 dark:bg-smart-green-900/20 rounded-full mb-5">
+                        <Loader2 className="w-10 h-10 text-smart-green-600 animate-spin" />
                     </div>
-                    <button
-                        onClick={() => { setEditingCrop(null); setFormData(DEFAULT_CROP_FORM); setShowModal(true); }}
-                        className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-2xl font-bold shadow-lg transition-all active:scale-95"
-                    >
-                        <Plus size={20} />
-                        Add New Crop
-                    </button>
+                    <p className="font-fraunces font-bold text-2xl text-[#111] dark:text-white mb-2">Loading your crops</p>
+                    <p className="text-sm text-gray-400">Fetching latest harvest data…</p>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="min-h-screen bg-[#f5f4f0] dark:bg-[#0a0a0a] font-dm text-[#111] dark:text-gray-100 pt-24 pb-24 transition-colors duration-300">
+            <PageBackground />
+
+            <div className="relative max-w-7xl mx-auto px-6">
+                {/* ── Page header ── */}
+                <div className="mb-10" style={{ animation: "fadeSlideDown 0.8s ease both" }}>
+                    <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-smart-green-600 dark:text-smart-green-400 mb-3 block">
+                        Harvest Management
+                    </span>
+                    <div className="flex flex-col md:flex-row md:items-end justify-between lg:gap-4">
+                        <h1 className="font-fraunces font-black text-4xl md:text-6xl tracking-[-0.02em] leading-[1.05] flex items-center lg:gap-2 flex-wrap">
+                            My <em className="not-italic bg-gradient-to-br from-[#3b6d11] to-[#6BBF2A] bg-clip-text text-transparent ml-2">Crops</em>
+                            <Sprout className="lg:w-12 lg:h-12 w-10 h-10 text-smart-green-600 ml-3" />
+                        </h1>
+                        <button
+                            onClick={() => { setEditingCrop(null); setFormData(DEFAULT_CROP_FORM); setShowModal(true); }}
+                            className="mt-6 md:mt-0 inline-flex items-center gap-2 px-6 py-3.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all active:scale-95 text-sm"
+                        >
+                            <Plus size={18} />
+                            Add New Crop
+                        </button>
+                    </div>
+                    <p className="text-md font-medium text-gray-400 mt-2 shrink-0">
+                        Manage and monitor your farm's active seasonal crops.
+                    </p>
                 </div>
 
                 {error && (
-                    <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-400 flex items-start justify-between">
-                        <span>⚠️ {error}</span>
-                        <button onClick={() => setError(null)} className="text-lg hover:text-red-900">×</button>
-                    </div>
+                    <Reveal>
+                        <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30 rounded-2xl flex items-start justify-between gap-4">
+                            <p className="text-red-600 dark:text-red-400 font-medium text-sm">{error}</p>
+                            <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600 flex-shrink-0 bg-red-100 dark:bg-red-900/20 p-1 rounded-full">
+                                <X size={14} />
+                            </button>
+                        </div>
+                    </Reveal>
                 )}
 
-                <div className="flex flex-col sm:flex-row gap-4 mb-8">
-                    <div className="relative flex-1">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                        <input
-                            type="text"
-                            placeholder="Search crops or varieties..."
-                            className="w-full pl-12 pr-4 py-3 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-green-500 outline-none transition-all dark:text-white"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                    </div>
+                {/* ── Search Bar ── */}
+                <div className="relative mb-8" style={{ animation: "fadeSlideDown 0.8s ease both" }}>
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <input
+                        type="text"
+                        placeholder="Search crops or varieties..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-11 pr-4 py-4 bg-white dark:bg-white/[0.03] border border-black/6 dark:border-white/6 rounded-2xl shadow-sm focus:ring-2 focus:ring-smart-green-500 outline-none dark:text-white text-sm transition-all placeholder:text-gray-400"
+                    />
+                    {searchTerm && (
+                        <button
+                            onClick={() => setSearchTerm("")}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 bg-gray-100 dark:bg-white/10 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors"
+                        >
+                            <X size={14} />
+                        </button>
+                    )}
                 </div>
 
-                {fetchingCrops ? (
-                    <div className="flex items-center justify-center py-12">
-                        <Loader2 className="animate-spin text-green-600" size={32} />
-                        <span className="ml-3 text-gray-600 dark:text-gray-400">Loading crops...</span>
-                    </div>
-                ) : filteredCrops.length === 0 ? (
-                    <div className="text-center py-12">
-                        <Sprout className="mx-auto text-gray-400 mb-4" size={48} />
-                        <p className="text-gray-600 dark:text-gray-400 text-lg">
-                            {crops.length === 0
-                                ? "No crops yet. Add one to get started! 🌾"
-                                : "No crops match your search."}
-                        </p>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {filteredCrops.map((crop) => (
+                {/* ── Grid ── */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredCrops.map((crop, i) => (
+                        <Reveal key={crop.$id} delay={i * 60}>
                             <CropCard
-                                key={crop.$id}
                                 crop={crop}
                                 onEdit={handleEditCrop}
                                 onDelete={(id) => setShowDeleteConfirm(id)}
                             />
-                        ))}
-                    </div>
-                )}
+                        </Reveal>
+                    ))}
+
+                    {filteredCrops.length === 0 && !fetchingCrops && (
+                        <div className="col-span-full py-24 text-center">
+                            <div className="inline-flex p-6 bg-white dark:bg-white/[0.03] border border-black/6 dark:border-white/6 rounded-full mb-4">
+                                <Sprout size={40} className="text-gray-300 dark:text-gray-700" />
+                            </div>
+                            <h3 className="font-fraunces font-bold text-2xl mb-2">No Crops Found</h3>
+                            <p className="text-gray-500 dark:text-gray-400 text-sm">
+                                {searchTerm ? "We couldn't find any crops matching your search." : "You haven't added any crops yet. Click 'Add New Crop' to start."}
+                            </p>
+                        </div>
+                    )}
+                </div>
             </div>
 
             <CropFormModal
@@ -238,6 +268,13 @@ export default function Crops() {
                 onCancel={() => setShowDeleteConfirm(null)}
                 isDeleting={deletingId === showDeleteConfirm}
             />
+
+            <style>{`
+                @keyframes fadeSlideDown {
+                    from { opacity: 0; transform: translateY(-18px); }
+                    to   { opacity: 1; transform: translateY(0); }
+                }
+            `}</style>
         </div>
     );
 }
