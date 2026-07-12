@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Mail, Lock, ArrowRight, Eye, EyeOff, Loader2, Leaf } from "lucide-react";
+import { Mail, Lock, ArrowRight, Eye, EyeOff, Loader2 } from "lucide-react";
 import { account } from "../../appwrite/config";
 import TextLogo from "./../../../public/text_logo";
 import { useToast } from "../../component/Other/ToastContext";
@@ -31,100 +31,86 @@ function Login() {
   };
 
   useEffect(() => {
-    // Check if user is already logged in via Appwrite
     const checkSession = async () => {
       try {
         await account.get();
         navigate("/dashboard", { replace: true });
-      } catch {
-        // No active session, stay on login page
-      }
+      // eslint-disable-next-line no-empty
+      } catch {}
     };
     checkSession();
   }, [navigate]);
 
+  const inputBase = "w-full pl-12 pr-4 py-4 rounded-2xl bg-white/50 dark:bg-white/[0.02] border border-black/10 dark:border-white/10 focus:ring-2 focus:ring-smart-green-500 focus:border-transparent outline-none transition-all text-sm font-medium placeholder:text-gray-400 dark:text-white";
+
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 relative h-screen bg-auth-bg1 dark:bg-auth-bg2 bg-cover bg-center bg-no-repeat" >
-      <div className="w-full max-w-md p-8 rounded-xl bg-white/70 dark:bg-gray-900/70 backdrop-blur shadow-lg border border-white/20 dark:border-gray-800">
-        <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-white">
+    <div className="min-h-screen flex items-center justify-center px-4 relative bg-auth-bg1 dark:bg-auth-bg2 bg-cover bg-center bg-no-repeat font-dm text-[#111] dark:text-gray-100">
+      <div className="absolute inset-0 bg-white/20 dark:bg-black/40 backdrop-blur-sm pointer-events-none" />
+      
+      <div className="relative z-10 w-full max-w-md p-8 md:p-10 rounded-[2.5rem] bg-white/80 dark:bg-[#0a0a0a]/80 backdrop-blur-xl shadow-2xl border border-black/10 dark:border-white/10 animate-in fade-in zoom-in duration-500">
+        <h1 className="font-fraunces font-black text-4xl text-center mb-2 tracking-tight flex items-center justify-center gap-2">
           Welcome to <TextLogo />
         </h1>
 
-        <p className="mt-2 text-center text-gray-600 dark:text-gray-400">
+        <p className="text-center text-sm font-medium text-gray-500 dark:text-gray-400 mb-8">
           Login to manage your crops & fields
         </p>
 
-        <form onSubmit={handleLogin} className="mt-8 space-y-5">
-          {/* Email */}
+        <form onSubmit={handleLogin} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium dark:text-gray-300">Email</label>
-            <div className="relative mt-1">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <label className="block text-[10px] font-bold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-widest">Email Address</label>
+            <div className="relative">
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="email"
                 required
                 placeholder="farmer@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-green-500 outline-none transition-all"
+                className={inputBase}
               />
             </div>
           </div>
 
-          {/* Password */}
-          <div className="space-y-1">
-            <div className="flex items-center justify-between">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Password
-              </label>
-              {/* Moved inside the flex container to push it to the right */}
-              <Link
-                to="/forgot-password"
-                className="text-xs font-medium text-green-600 hover:text-green-500 hover:underline transition-colors"
-              >
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Password</label>
+              <Link to="/forgot-password" className="text-[11px] font-bold text-smart-green-600 hover:text-smart-green-500 transition-colors">
                 Forgot password?
               </Link>
             </div>
-
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type={showPassword ? "text" : "password"}
                 required
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-10 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-green-500 outline-none dark:text-gray-200 transition-all"
+                className={inputBase}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
               >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
           </div>
 
-          {/* Submit Button */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-lg bg-gradient-to-r from-green-600 to-emerald-600 text-white font-medium hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed transition-all"
+            className="w-full flex items-center justify-center gap-2 py-4 mt-4 rounded-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-xl shadow-smart-green-900/20 active:scale-95 transition-all disabled:opacity-70 text-base"
           >
-            {loading ? (
-              <Loader2 className="animate-spin" />
-            ) : (
-              <>
-                Login <ArrowRight size={20} />
-              </>
-            )}
+            {loading ? <Loader2 className="animate-spin" /> : <>Login <ArrowRight size={20} /></>}
           </button>
         </form>
 
-        <p className="mt-4 text-center text-sm dark:text-gray-400">
+        <p className="mt-8 text-center text-sm font-bold text-gray-500 dark:text-gray-400">
           New farmer?{" "}
-          <Link to="/signup" className="text-green-600 font-medium hover:underline">
+          <Link to="/signup" className="text-smart-green-600 hover:text-smart-green-500 transition-colors">
             Create account
           </Link>
         </p>
