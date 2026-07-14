@@ -25,7 +25,7 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-[#FAFAFA] dark:bg-[#050505] font-dm text-gray-900 dark:text-gray-100 selection:bg-smart-green-500 selection:text-white">
       
-      {/* ─── Premium Sticky Navigation ─── */}
+      {/* ─── Sticky Navigation ─── */}
       <nav className={`fixed top-0 w-full z-[100] transition-all duration-500 ${
         isScrolled 
           ? "bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-gray-200/50 dark:border-gray-800/50 py-4 shadow-sm" 

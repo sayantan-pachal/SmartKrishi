@@ -35,8 +35,8 @@ function Login() {
       try {
         await account.get();
         navigate("/dashboard", { replace: true });
-      // eslint-disable-next-line no-empty
-      } catch {}
+        // eslint-disable-next-line no-empty
+      } catch { }
     };
     checkSession();
   }, [navigate]);
@@ -46,10 +46,13 @@ function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4 relative bg-auth-bg1 dark:bg-auth-bg2 bg-cover bg-center bg-no-repeat font-dm text-[#111] dark:text-gray-100">
       <div className="absolute inset-0 bg-white/20 dark:bg-black/40 backdrop-blur-sm pointer-events-none" />
-      
+
       <div className="relative z-10 w-full max-w-md p-8 md:p-10 rounded-[2.5rem] bg-white/80 dark:bg-[#0a0a0a]/80 backdrop-blur-xl shadow-2xl border border-black/10 dark:border-white/10 animate-in fade-in zoom-in duration-500">
-        <h1 className="font-fraunces font-black text-4xl text-center mb-2 tracking-tight flex items-center justify-center gap-2">
-          Welcome to <TextLogo />
+        <h1 className="font-fraunces font-black text-4xl text-center mb-2 tracking-tight">
+          <span className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2">
+            <span>Welcome to</span>
+            <TextLogo />
+          </span>
         </h1>
 
         <p className="text-center text-sm font-medium text-gray-500 dark:text-gray-400 mb-8">

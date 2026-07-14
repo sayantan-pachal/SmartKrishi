@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Mail, Lock, Eye, EyeOff, ArrowRight, Loader2, Phone } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowRight, Loader2, Phone, ShieldQuestion, RefreshCw } from "lucide-react";
 import { account } from "../../appwrite/config";
 import { useToast } from "../../component/Other/ToastContext";
 
@@ -11,10 +11,29 @@ function ForgetPassword() {
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [newPassword, setNewPassword] = useState("");
+  
+  // CAPTCHA State
+  const [captchaNum1, setCaptchaNum1] = useState(0);
+  const [captchaNum2, setCaptchaNum2] = useState(0);
+  const [captchaAnswer, setCaptchaAnswer] = useState("");
 
+  // Password State
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // Generate CAPTCHA on mount
+  useEffect(() => {
+    generateCaptcha();
+  }, []);
+
+  const generateCaptcha = () => {
+    setCaptchaNum1(Math.floor(Math.random() * 10) + 1);
+    setCaptchaNum2(Math.floor(Math.random() * 10) + 1);
+    setCaptchaAnswer("");
+  };
 
   const handleVerify = (e) => {
     e.preventDefault();
@@ -22,6 +41,14 @@ function ForgetPassword() {
       showToast("Please enter both email and phone number", "error");
       return;
     }
+    
+    // Verify CAPTCHA
+    if (parseInt(captchaAnswer) !== captchaNum1 + captchaNum2) {
+      showToast("Incorrect CAPTCHA answer. Please try again.", "error");
+      generateCaptcha();
+      return;
+    }
+
     setStep(2);
   };
 
@@ -29,6 +56,12 @@ function ForgetPassword() {
     e.preventDefault();
     if (newPassword.length < 8) {
       showToast("Password must be at least 8 characters 🔑", "error");
+      return;
+    }
+    
+    // Verify Passwords Match
+    if (newPassword !== confirmPassword) {
+      showToast("Passwords do not match! Please check again.", "error");
       return;
     }
 
@@ -41,6 +74,7 @@ function ForgetPassword() {
       console.error("Reset Error:", error);
       showToast(error.message || "Failed to reset password. Please check your details.", "error");
       setStep(1); 
+      generateCaptcha(); // Reset captcha if sent back
     } finally {
       setLoading(false);
     }
@@ -95,6 +129,34 @@ function ForgetPassword() {
                 </div>
             </div>
 
+            {/* CAPTCHA Section */}
+            <div>
+                <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-widest flex items-center justify-between">
+                    <span>Security Check</span>
+                    <button type="button" onClick={generateCaptcha} className="hover:text-smart-green-500 transition-colors">
+                        <RefreshCw size={12} />
+                    </button>
+                </label>
+                <div className="flex items-center gap-3">
+                    <div className="flex-1 flex items-center justify-center gap-2 py-4 rounded-2xl bg-gray-100 dark:bg-white/[0.05] border border-black/5 dark:border-white/5 text-lg font-black tracking-widest">
+                        <span>{captchaNum1}</span>
+                        <span className="text-smart-green-500">+</span>
+                        <span>{captchaNum2}</span>
+                        <span className="text-gray-400">=</span>
+                    </div>
+                    <div className="relative flex-1">
+                      <ShieldQuestion className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        required
+                        placeholder="Answer"
+                        value={captchaAnswer}
+                        onChange={(e) => setCaptchaAnswer(e.target.value)}
+                        className={inputBase}
+                      />
+                    </div>
+                </div>
+            </div>
+
             <button
               type="submit"
               className="w-full flex items-center justify-center gap-2 py-4 mt-2 rounded-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-xl shadow-smart-green-900/20 active:scale-95 transition-all text-base"
@@ -129,6 +191,28 @@ function ForgetPassword() {
                 </div>
             </div>
 
+            <div>
+                <label className="block text-[10px] font-bold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-widest">Confirm Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    required
+                    placeholder="Type password again"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className={inputBase}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+            </div>
+
             <div className="space-y-3 pt-2">
                 <button
                   type="submit"
@@ -139,7 +223,10 @@ function ForgetPassword() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => navigate("/login")}
+                  onClick={() => {
+                    setStep(1);
+                    generateCaptcha();
+                  }}
                   className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-bold bg-gray-100 dark:bg-white/[0.05] text-[#111] dark:text-white hover:bg-gray-200 dark:hover:bg-white/10 active:scale-95 transition-all text-base"
                 >
                   Cancel
