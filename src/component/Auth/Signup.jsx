@@ -36,6 +36,30 @@ function Signup() {
         
         setLoading(true);
         try {
+            // 1️⃣ PRE-FLIGHT CHECK: Fetch existing users to check for duplicates
+            const SCRIPT_URL = import.meta.env.VITE_GOOGLE_SCRIPT_URL;
+            const res = await fetch(`${SCRIPT_URL}?sheet=users`);
+            const users = await res.json();
+
+            if (!users.error && Array.isArray(users)) {
+                // Check if email or phone already exists
+                const emailExists = users.some(u => String(u.email).trim().toLowerCase() === String(email).trim().toLowerCase());
+                const phoneExists = users.some(u => String(u.phone).trim() === String(phone).trim());
+
+                if (emailExists) {
+                    showToast("This email is already registered. Please login instead. ⚠️", "error");
+                    setLoading(false);
+                    return; // Stop the signup process
+                }
+
+                if (phoneExists) {
+                    showToast("This phone number is already registered. ⚠️", "error");
+                    setLoading(false);
+                    return; // Stop the signup process
+                }
+            }
+
+            // 2️⃣ PROCEED WITH CREATION if no duplicates found
             const generatedId = ID.unique();
             const newUser = await account.create(generatedId, email, password, name, phone);
             localStorage.setItem("smartkrishi_user", JSON.stringify(newUser));
