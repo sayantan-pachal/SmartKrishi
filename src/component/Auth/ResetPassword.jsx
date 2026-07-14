@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Lock, Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
+import { Lock, Eye, EyeOff, ArrowRight, Loader2, ShieldQuestion, RefreshCw } from "lucide-react";
 import { account } from "../../appwrite/config";
 import { useToast } from "../../component/Other/ToastContext";
 
@@ -16,6 +16,17 @@ function ResetPassword() {
   const [showNew, setShowNew] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // CAPTCHA State
+  const [captchaNum1, setCaptchaNum1] = useState(0);
+  const [captchaNum2, setCaptchaNum2] = useState(0);
+  const [captchaAnswer, setCaptchaAnswer] = useState("");
+
+  const generateCaptcha = () => {
+    setCaptchaNum1(Math.floor(Math.random() * 10) + 1);
+    setCaptchaNum2(Math.floor(Math.random() * 10) + 1);
+    setCaptchaAnswer("");
+  };
+
   useEffect(() => {
     const checkSession = async () => {
       try {
@@ -25,6 +36,7 @@ function ResetPassword() {
       }
     };
     checkSession();
+    generateCaptcha(); // Initialize CAPTCHA on mount
   }, [navigate]);
 
   const handleReset = async (e) => {
@@ -38,6 +50,13 @@ function ResetPassword() {
       return;
     }
 
+    // Verify CAPTCHA
+    if (parseInt(captchaAnswer) !== captchaNum1 + captchaNum2) {
+      showToast("Incorrect CAPTCHA answer. Please try again.", "error");
+      generateCaptcha();
+      return;
+    }
+
     setLoading(true);
     try {
       await account.updatePassword(newPassword, oldPassword);
@@ -46,6 +65,7 @@ function ResetPassword() {
     } catch (error) {
       console.error("Password Update Error:", error);
       showToast("Failed to update password. Check your old password.", "error");
+      generateCaptcha(); // Refresh CAPTCHA on failure
     } finally {
       setLoading(false);
     }
@@ -109,6 +129,36 @@ function ResetPassword() {
                 {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
+          </div>
+
+          {/* CAPTCHA Section */}
+          <div>
+              <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-widest flex items-center justify-between">
+                  <span>Security Check</span>
+                  <button type="button" onClick={generateCaptcha} className="hover:text-smart-green-500 transition-colors">
+                      <RefreshCw size={12} />
+                  </button>
+              </label>
+              <div className="flex items-center gap-3">
+                  <div className="flex-1 flex items-center justify-center gap-2 py-4 rounded-2xl bg-gray-100 dark:bg-white/[0.05] border border-black/5 dark:border-white/5 text-lg font-black tracking-widest">
+                      <span>{captchaNum1}</span>
+                      <span className="text-smart-green-500">+</span>
+                      <span>{captchaNum2}</span>
+                      <span className="text-gray-400">=</span>
+                  </div>
+                  <div className="relative flex-1">
+                    <ShieldQuestion className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="number"
+                      required
+                      placeholder="Answer"
+                      value={captchaAnswer}
+                      onChange={(e) => setCaptchaAnswer(e.target.value)}
+                      // Remove pr-12 here because we don't have an eye icon in this input
+                      className={`${inputBase} pr-4`} 
+                    />
+                  </div>
+              </div>
           </div>
 
           <button
