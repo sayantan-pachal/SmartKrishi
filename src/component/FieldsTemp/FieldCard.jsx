@@ -1,13 +1,19 @@
 /* eslint-disable no-unused-vars */
-import React from "react";
+import React, { useEffect } from 'react';
+import { animateOnScroll } from "../../scrollAnimation";
 import { Navigation, Leaf, Edit, Trash2 } from "lucide-react";
 import { SOIL_METRIC_CARDS, getStatusStyle } from "../../data/FieldsData";
 
 const FieldCard = React.memo(({ field, onViewDetails, onEdit, onDelete }) => {
     const statusStyle = getStatusStyle(field.status);
 
+    useEffect(() => {
+        // Initialize animation for this component
+        animateOnScroll(".box");
+    }, []);
+
     return (
-        <div className="group relative bg-white dark:bg-white/[0.03] border border-black/6 dark:border-white/6 rounded-[2rem] p-6 hover:border-smart-green-300 dark:hover:border-smart-green-800 hover:shadow-xl hover:shadow-smart-green-900/5 transition-all duration-300 overflow-hidden flex flex-col h-full">
+        <div className="box group relative bg-white dark:bg-white/[0.03] border border-black/6 dark:border-white/6 rounded-[2rem] p-6 hover:border-smart-green-300 dark:hover:border-smart-green-800 hover:shadow-xl hover:shadow-smart-green-900/5 transition-all duration-300 overflow-hidden flex flex-col h-full">
             
             {/* Status badge */}
             <span className={`absolute top-5 right-5 px-3 py-1 rounded-full text-[10px] uppercase tracking-widest font-bold ${statusStyle.badge}`}>
