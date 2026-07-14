@@ -68,6 +68,36 @@ To get a local copy up and running, follow these simple steps.
 ``VITE_GOOGLE_SCRIPT_URL=your_google_script_web_app_url_here``
 
 4. Run the development server:
-
 ``npm run dev``
-5. Open your browser and navigate to http://localhost:5173
+
+5. Open your browser and navigate to ``http://localhost:5173``
+
+---
+
+## 📁 Folder Structure
+
+```txt
+smartkrishi/
+├── public/                 # Static assets (logos, icons)
+├── src/
+│   ├── appwrite/           # Backend config & API calls (Google Script logic)
+│   ├── component/          # Reusable UI components (Header, Footer, Toasts)
+│   ├── data/               # Static data structures
+│   ├── pages/              # Application views (Home, Dashboard, Legal, etc.)
+│   ├── App.jsx             # Main routing component
+│   └── main.jsx            # Application entry point
+├── index.html              # SEO-optimized HTML template
+├── tailwind.config.js      # Tailwind theme configuration
+└── vite.config.js          # Vite configuration
+```
+---
+
+## 👨‍💻 About the Developer
+
+**Sayantan Pachal**
+<br>
+*Aspiring CSE Student • Full-Stack Developer • AI Learner*
+
+- 🌐 Portfolio: sayantanpachal.vercel.app
+- 💼 LinkedIn: linkedin.com/in/sayantan-pachal
+- 🐙 GitHub: @sayantan-pachal
