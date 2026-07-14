@@ -13,6 +13,12 @@
   <img src="https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white" alt="Vercel" />
 </p>
 
+<p align="center">
+  <a href="https://smartkrishi-spachal.vercel.app/">
+    <img src="https://img.shields.io/badge/Live-0A66C2?logo=vercel&logoColor=white" alt="Live" width="170" />
+  </a>
+</p>
+
 </div>
 
 ---
