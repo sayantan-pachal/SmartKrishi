@@ -13,6 +13,7 @@ const navLinks = [
     { label: "Fields", to: "/fields" },
     { label: "Crops", to: "/crops" },
     { label: "Advisory", to: "/advisory" },
+    { label: "Vision", to: "/vision" },
 ];
 
 export default function Header() {

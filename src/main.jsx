@@ -15,6 +15,7 @@ import Settings from './component/Settings/Settings.jsx'
 import Fields from './component/FieldsTemp/Fields.jsx'
 import Crops from './component/Crops/Crops.jsx'
 import Advisory from './component/Advisory/Advisory.jsx'
+import Vision from './component/Vision/vision.jsx'
 import Legal from './component/Other/Legal.jsx'
 import BuiltWith from './component/Other/BuiltWith.jsx'
 import Edgecase from './component/Other/Edgecase.jsx'
@@ -38,6 +39,7 @@ const router = createBrowserRouter(
         <Route path='fields' element={<ProtectedRoute><Fields /></ProtectedRoute>} />
         <Route path='crops' element={<ProtectedRoute><Crops /></ProtectedRoute>} />
         <Route path='advisory' element={<ProtectedRoute><Advisory /></ProtectedRoute>} />
+        <Route path='vision' element={<ProtectedRoute><Vision /></ProtectedRoute>} />
         <Route path='profile' element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path='settings' element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       </Route>
