@@ -1,6 +1,6 @@
 <div align="center">
   
-# 🌾 SmartKrishi
+# <img src="https://github.com/sayantan-pachal/SmartKrishi/blob/main/public/circular_logo.png" alt="logo" width="35"/> <img src="https://github.com/sayantan-pachal/SmartKrishi/blob/main/public/logo.png" alt=" SmartKrishi" width="140"/>
 
 **Next-Generation Farm & Crop Management Platform**
 
