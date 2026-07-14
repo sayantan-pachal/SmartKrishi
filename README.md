@@ -13,12 +13,6 @@
   <img src="https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white" alt="Vercel" />
 </p>
 
-<p align="center">
-  <a href="https://smartkrishi-spachal.vercel.app/">
-    <img src="https://img.shields.io/badge/Live-0A66C2?logo=vercel&logoColor=white" alt="Live" width="170" />
-  </a>
-</p>
-
 </div>
 
 ---
@@ -28,6 +22,12 @@
 **SmartKrishi** is a modern agricultural management web application designed to empower farmers with data-driven insights. By combining real-time environmental data with intelligent analysis, the platform helps farmers optimize field management, monitor crop health, and increase overall yield. 
 
 Instead of a traditional backend, SmartKrishi utilizes a unique and lightweight architecture where **Google Sheets** serves as the database, accessed via a custom **Google Apps Script** API.
+
+<p align="center">
+  <a href="https://smartkrishi-spachal.vercel.app/">
+    <img src="https://img.shields.io/badge/Live-Page-38B2AC?style=for-the-badge&logo=vercel&logoColor=white" alt="Live-Page" />
+  </a>
+</p>
 
 ## ✨ Key Features
 
@@ -107,3 +107,12 @@ smartkrishi/
 - 🌐 Portfolio: sayantanpachal.vercel.app
 - 💼 LinkedIn: linkedin.com/in/sayantan-pachal
 - 🐙 GitHub: @sayantan-pachal
+
+---
+
+## ⚖️ Legal & Compliance
+This platform is built for agricultural support. By using SmartKrishi, you acknowledge our commitment to privacy and data security.
+
+<a href="https://smartkrishi-spachal.vercel.app/legal">Privacy Policy & Terms of Conditions</a>
+
+© 2026 SmartKrishi. All rights reserved.
