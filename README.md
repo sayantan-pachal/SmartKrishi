@@ -64,7 +64,7 @@ To get a local copy up and running, follow these simple steps.
 ``npm install``
 
 3. Configure Environment Variables:
-Create a .env file in the root directory and add your Google Apps Script URL:
+- Create a .env file in the root directory and add your Google Apps Script URL:
 ``VITE_GOOGLE_SCRIPT_URL=your_google_script_web_app_url_here``
 
 4. Run the development server:
