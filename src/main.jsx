@@ -15,6 +15,8 @@ import Settings from './component/Settings/Settings.jsx'
 import Fields from './component/FieldsTemp/Fields.jsx'
 import Crops from './component/Crops/Crops.jsx'
 import Advisory from './component/Advisory/Advisory.jsx'
+import Legal from './component/Other/Legal.jsx'
+import BuiltWith from './component/Other/BuiltWith.jsx'
 import Edgecase from './component/Other/Edgecase.jsx'
 import { ToastProvider } from "./component/Other/ToastContext.jsx";
 
@@ -28,6 +30,8 @@ const router = createBrowserRouter(
       <Route path="signup" element={<Signup />} />
       <Route path="forgot-password" element={<ForgetPassword />} />
       <Route path="reset-password" element={<ResetPassword />} />
+      <Route path='legal' element={<Legal />} />
+      <Route path='built-with' element={<BuiltWith />} />
       {/* Protected Routes: Wrapped INSIDE the Layout (Header + Outlet + Footer) */}
       <Route element={<Layout />}>
         <Route path='dashboard' element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

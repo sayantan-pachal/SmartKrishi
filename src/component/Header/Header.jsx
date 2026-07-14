@@ -70,7 +70,10 @@ export default function Header() {
     };
 
     return (
-        <nav className="bg-[linear-gradient(180deg,#f0fdf4,#dcfce7)] dark:bg-[linear-gradient(180deg,#020617,#020617)] dark:border-gray-700 fixed top-0 z-50 w-full border-b ">
+        <nav 
+            className="bg-[linear-gradient(180deg,#f0fdf4,#dcfce7)] dark:bg-[linear-gradient(180deg,#020617,#020617)] dark:border-gray-700 fixed top-0 z-50 w-full border-b font-dm"
+            aria-label="Main Navigation"
+        >
             <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
                 {/* Logo */}
                 <div className="flex items-center">
@@ -84,7 +87,7 @@ export default function Header() {
                             <NavLink
                                 to={link.to}
                                 className={({ isActive }) =>
-                                    `font-semibold transition-colors duration-200 ${isActive
+                                    `font-bold transition-colors duration-200 ${isActive
                                         ? "text-green-600 dark:text-green-400"
                                         : "text-gray-700 dark:text-gray-300"
                                     } hover:text-green-600 dark:hover:text-green-400 lg:p-0`
@@ -95,53 +98,66 @@ export default function Header() {
                         </li>
                     ))}
                 </ul>
+                
                 {/* Right Section */}
                 <div className="flex items-center gap-4 relative" ref={dropdownRef}>
                     <ThemeToggle />
+                    
                     {/* User Avatar */}
-                    <button onClick={() => setUserOpen(!userOpen)} className="focus:outline-none hover:opacity-80 transition">
+                    <button 
+                        type="button"
+                        onClick={() => setUserOpen(!userOpen)} 
+                        aria-expanded={userOpen}
+                        aria-haspopup="true"
+                        aria-label="Toggle user menu"
+                        className="focus:outline-none hover:opacity-80 transition"
+                    >
                         {user ? (
                             <div className="w-10 h-10 rounded-full border-2 border-green-500 p-1">
                                 <img
                                     src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'Farmer')}&background=dcfce7&color=166534&bold=true&font-size=0.6&length=2`}
-                                    alt="Avatar"
+                                    alt={`${user?.name}'s avatar`}
                                     className="w-full h-full rounded-full object-cover"
                                 />
                             </div>
                         ) : (
-                            <UserRound className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+                            <UserRound className="w-6 h-6 text-gray-600 dark:text-gray-400" aria-hidden="true" />
                         )}
                     </button>
+                    
                     {/* User Dropdown */}
                     {userOpen && (
-                        <div className="absolute right-0 top-12 w-56 bg-[#f0fdf4] dark:bg-gray-800 border dark:border-gray-700 rounded-tr-2xl rounded-bl-2xl shadow-xl overflow-hidden z-50">
+                        <div 
+                            className="absolute right-0 top-12 w-56 bg-[#f0fdf4] dark:bg-gray-800 border dark:border-gray-700 rounded-tr-2xl rounded-bl-2xl shadow-xl overflow-hidden z-50"
+                            role="menu"
+                        >
                             <div className="px-4 py-3 border-b dark:border-gray-700 bg-green-50/30 dark:bg-gray-800/50">
                                 {/* ✅ Updated to use Appwrite 'user' state */}
                                 <p className="text-sm font-bold text-gray-900 dark:text-white truncate" title={user?.name}>
                                     {user?.name || "Farmer"}
                                 </p>
-                                <p className="text-xs text-gray-500 truncate" title={user?.email}>
+                                <p className="text-xs font-medium text-gray-500 truncate" title={user?.email}>
                                     {user?.email || "Guest"}
                                 </p>
                             </div>
-                            <ul className="text-sm dark:text-gray-300">
-                                <li>
-                                    <Link to="/profile" onClick={() => setUserOpen(false)} className="block px-4 py-2 hover:bg-green-100 dark:hover:bg-gray-700 transition-colors">
+                            <ul className="text-sm font-medium dark:text-gray-300" role="none">
+                                <li role="none">
+                                    <Link to="/profile" role="menuitem" onClick={() => setUserOpen(false)} className="block px-4 py-2 hover:bg-green-100 dark:hover:bg-gray-700 transition-colors">
                                         Profile
                                     </Link>
                                 </li>
-                                <li>
-                                    <Link to="/reset-password" onClick={() => setUserOpen(false)} className="block px-4 py-2 hover:bg-green-100 dark:hover:bg-gray-700 transition-colors">
+                                <li role="none">
+                                    <Link to="/reset-password" role="menuitem" onClick={() => setUserOpen(false)} className="block px-4 py-2 hover:bg-green-100 dark:hover:bg-gray-700 transition-colors">
                                         Reset Password
                                     </Link>
                                 </li>
-                                <li>
-                                    <Link to="/settings" onClick={() => setUserOpen(false)} className="block px-4 py-2 hover:bg-green-100 dark:hover:bg-gray-700 transition-colors">
+                                <li role="none">
+                                    <Link to="/settings" role="menuitem" onClick={() => setUserOpen(false)} className="block px-4 py-2 hover:bg-green-100 dark:hover:bg-gray-700 transition-colors">
                                         Settings
                                     </Link>
                                 </li>
-                                <li>
-                                    <button onClick={handleLogout} className="w-full text-left block px-4 py-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                                <li role="none">
+                                    <button type="button" role="menuitem" onClick={handleLogout} className="w-full text-left font-bold block px-4 py-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
                                         Logout
                                     </button>
                                 </li>
@@ -151,10 +167,13 @@ export default function Header() {
 
                     {/* Mobile Menu Button */}
                     <button
+                        type="button"
                         className="md:hidden"
                         onClick={() => setMenuOpen(!menuOpen)}
+                        aria-expanded={menuOpen}
+                        aria-label="Toggle mobile menu"
                     >
-                        {menuOpen ? <X className="w-6 h-6 text-gray-500 dark:text-gray-400" /> : <Menu className="w-6 h-6 text-gray-500 dark:text-gray-400" />}
+                        {menuOpen ? <X className="w-6 h-6 text-gray-500 dark:text-gray-400" aria-hidden="true" /> : <Menu className="w-6 h-6 text-gray-500 dark:text-gray-400" aria-hidden="true" />}
                     </button>
                 </div>
             </div>
@@ -169,7 +188,7 @@ export default function Header() {
                                     to={link.to}
                                     onClick={() => setMenuOpen(false)}
                                     className={({ isActive }) =>
-                                        `block py-2 px-4 rounded-lg font-semibold transition-colors ${isActive
+                                        `block py-2 px-4 rounded-lg font-bold transition-colors ${isActive
                                             ? "bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400"
                                             : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
                                         }`
