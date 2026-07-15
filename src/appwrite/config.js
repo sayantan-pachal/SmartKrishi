@@ -16,7 +16,6 @@ const hashPassword = async (password) => {
 
 export const account = {
     // 1. Create Account (Signup)
-    // 1. Create Account (Signup)
     create: async (userId, email, password, name, phone) => {
         // Hash the password BEFORE saving it to Google Sheets
         const hashedPassword = await hashPassword(password);
@@ -37,7 +36,20 @@ export const account = {
         return userData;
     },
 
-    // 2. Create Session (Login)
+    // 2. Send OTP Verification Email
+    sendVerificationEmail: async (email, otp) => {
+        await fetch(SCRIPT_URL, {
+            method: "POST",
+            mode: "no-cors",
+            body: JSON.stringify({
+                action: "sendEmail",
+                data: { email, otp }
+            })
+        });
+        return true;
+    },
+
+    // 3. Create Session (Login)
     createEmailPasswordSession: async (email, password) => {
         // Hash the input password to match against the database hash
         const hashedPassword = await hashPassword(password);
@@ -58,20 +70,20 @@ export const account = {
         return user;
     },
 
-    // 3. Get currently logged in user profile
+    // 4. Get currently logged in user profile
     get: async () => {
         const userData = localStorage.getItem("smartkrishi_user");
         if (!userData) throw new Error("No active session");
         return JSON.parse(userData);
     },
 
-    // 4. Logout
+    // 5. Logout
     deleteSession: async (sessionId = "current") => {
         localStorage.removeItem("smartkrishi_user");
         return true;
     },
 
-    // 5. Update Password from Account Settings
+    // 6. Update Password from Account Settings
     updatePassword: async (newPassword, oldPassword) => {
         const current = await account.get();
         
@@ -102,7 +114,7 @@ export const account = {
         return true;
     },
 
-    // 6. Reset Password Without Email (Uses Phone Verification)
+    // 7. Reset Password Without Email (Uses Phone Verification)
     recoverPassword: async (email, phone, newPassword) => {
         const res = await fetch(`${SCRIPT_URL}?sheet=users`);
         const users = await res.json();
@@ -204,6 +216,30 @@ export const databases = {
             })
         });
         return true;
+    },
+
+    // NEW: Log user activity
+    logActivity: async (actionType, description) => {
+        try {
+            const currentUser = JSON.parse(localStorage.getItem("smartkrishi_user"));
+            if (!currentUser) return; // Fail silently if not logged in
+
+            await fetch(SCRIPT_URL, {
+                method: "POST",
+                mode: "no-cors",
+                body: JSON.stringify({
+                    sheet: "activities",
+                    action: "logActivity",
+                    data: {
+                        userId: currentUser.userId,
+                        actionType: actionType,
+                        description: description
+                    }
+                })
+            });
+        } catch (e) {
+            console.error("Failed to log activity", e);
+        }
     }
 };
 
